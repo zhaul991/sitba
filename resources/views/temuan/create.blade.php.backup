@@ -1,0 +1,258 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="p-6 md:p-8">
+
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">
+            Tambah Temuan
+        </h1>
+
+        <p class="mt-2 text-gray-500">
+            Tambahkan temuan hasil kegiatan inspeksi bandar udara.
+        </p>
+    </div>
+
+    <div class="max-w-4xl rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+
+        @if ($errors->any())
+            <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-red-700">
+                <p class="font-semibold">
+                    Data temuan belum dapat disimpan.
+                </p>
+
+                <ul class="mt-2 list-inside list-disc text-sm">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <form action="{{ route('temuan.store') }}" method="POST">
+            @csrf
+
+            <div class="space-y-6">
+
+                <div>
+                    <label for="inspeksi_id"
+                           class="mb-2 block text-sm font-semibold text-gray-700">
+                        Kegiatan Inspeksi
+                    </label>
+
+                    <select
+                        id="inspeksi_id"
+                        name="inspeksi_id"
+                        class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        required
+                    >
+                        <option value="">
+                            Pilih kegiatan inspeksi
+                        </option>
+
+                        @foreach ($inspeksis as $inspeksi)
+                            <option
+                                value="{{ $inspeksi->id }}"
+                                @selected(
+                                    old('inspeksi_id', $inspeksiTerpilih) == $inspeksi->id
+                                )
+                            >
+                                {{ $inspeksi->bandara?->nama_bandara ?? 'Bandara tidak tersedia' }}
+                                — {{ $inspeksi->tanggal?->format('d-m-Y') ?? '-' }}
+                            </option>
+                        @endforeach
+                    </select>
+
+                    @error('inspeksi_id')
+                        <p class="mt-2 text-sm text-red-600">
+                            {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+
+                <div class="grid gap-6 sm:grid-cols-2">
+
+                    <div>
+                        <label for="nomor_temuan"
+                               class="mb-2 block text-sm font-semibold text-gray-700">
+                            Nomor Temuan
+                        </label>
+
+                        <input
+                            type="text"
+                            id="nomor_temuan"
+                            name="nomor_temuan"
+                            value="{{ old('nomor_temuan') }}"
+                            placeholder="Contoh: TMN-001"
+                            class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            required
+                        >
+
+                        @error('nomor_temuan')
+                            <p class="mt-2 text-sm text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="unsur_elemen"
+                               class="mb-2 block text-sm font-semibold text-gray-700">
+                            Unsur / Elemen
+                        </label>
+
+                        <input
+                            type="text"
+                            id="unsur_elemen"
+                            name="unsur_elemen"
+                            value="{{ old('unsur_elemen') }}"
+                            placeholder="Contoh: Runway, Apron, Terminal"
+                            class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            required
+                        >
+
+                        @error('unsur_elemen')
+                            <p class="mt-2 text-sm text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+
+                </div>
+
+                <div>
+                    <label for="uraian_temuan"
+                           class="mb-2 block text-sm font-semibold text-gray-700">
+                        Uraian Temuan
+                    </label>
+
+                    <textarea
+                        id="uraian_temuan"
+                        name="uraian_temuan"
+                        rows="6"
+                        placeholder="Jelaskan kondisi temuan secara lengkap..."
+                        class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        required
+                    >{{ old('uraian_temuan') }}</textarea>
+
+                    @error('uraian_temuan')
+                        <p class="mt-2 text-sm text-red-600">
+                            {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="lokasi"
+                           class="mb-2 block text-sm font-semibold text-gray-700">
+                        Lokasi Temuan
+                    </label>
+
+                    <input
+                        type="text"
+                        id="lokasi"
+                        name="lokasi"
+                        value="{{ old('lokasi') }}"
+                        placeholder="Contoh: Runway 03, Apron sisi utara"
+                        class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        required
+                    >
+
+                    @error('lokasi')
+                        <p class="mt-2 text-sm text-red-600">
+                            {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+
+                <div class="grid gap-6 sm:grid-cols-2">
+
+                    <div>
+                        <label for="tingkat_risiko"
+                               class="mb-2 block text-sm font-semibold text-gray-700">
+                            Tingkat Risiko
+                        </label>
+
+                        <select
+                            id="tingkat_risiko"
+                            name="tingkat_risiko"
+                            class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            required
+                        >
+                            <option value="">Pilih tingkat risiko</option>
+                            <option value="Rendah" @selected(old('tingkat_risiko') === 'Rendah')>
+                                Rendah
+                            </option>
+                            <option value="Sedang" @selected(old('tingkat_risiko') === 'Sedang')>
+                                Sedang
+                            </option>
+                            <option value="Tinggi" @selected(old('tingkat_risiko') === 'Tinggi')>
+                                Tinggi
+                            </option>
+                            <option value="Ekstrem" @selected(old('tingkat_risiko') === 'Ekstrem')>
+                                Ekstrem
+                            </option>
+                        </select>
+
+                        @error('tingkat_risiko')
+                            <p class="mt-2 text-sm text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="status"
+                               class="mb-2 block text-sm font-semibold text-gray-700">
+                            Status
+                        </label>
+
+                        <select
+                            id="status"
+                            name="status"
+                            class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            required
+                        >
+                            <option value="">Pilih status</option>
+                            <option value="Open" @selected(old('status', 'Open') === 'Open')>
+                                Open
+                            </option>
+                            <option value="Dalam Tindak Lanjut" @selected(old('status') === 'Dalam Tindak Lanjut')>
+                                Dalam Tindak Lanjut
+                            </option>
+                            <option value="Selesai" @selected(old('status') === 'Selesai')>
+                                Selesai
+                            </option>
+                        </select>
+
+                        @error('status')
+                            <p class="mt-2 text-sm text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+
+                <a href="{{ url()->previous() }}"
+                   class="rounded-xl border border-gray-300 px-5 py-3 text-center text-sm font-semibold text-gray-600 transition hover:bg-gray-50">
+                    Batal
+                </a>
+
+                <button
+                    type="submit"
+                    class="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
+                    Simpan Temuan
+                </button>
+
+            </div>
+        </form>
+
+    </div>
+
+</div>
+@endsection

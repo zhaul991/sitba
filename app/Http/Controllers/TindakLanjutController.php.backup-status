@@ -1,0 +1,135 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Temuan;
+use App\Models\TindakLanjut;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+
+class TindakLanjutController extends Controller
+{
+    public function create(Request $request)
+    {
+        $request->validate([
+            'temuan_id' => ['required', 'exists:temuans,id'],
+        ]);
+
+        $temuan = Temuan::with('inspeksi.bandara')
+            ->findOrFail($request->temuan_id);
+
+        return view('tindaklanjut.create', compact('temuan'));
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'temuan_id' => ['required', 'exists:temuans,id'],
+            'rencana_perbaikan' => ['required', 'string'],
+            'pic' => ['required', 'string', 'max:255'],
+            'deadline' => ['required', 'date'],
+            'status' => [
+                'required',
+                Rule::in([
+                    'Open',
+                    'Dalam Tindak Lanjut',
+                    'Selesai',
+                ]),
+            ],
+            'catatan' => ['nullable', 'string'],
+        ], [
+            'temuan_id.required' => 'Data temuan wajib tersedia.',
+            'temuan_id.exists' => 'Data temuan tidak valid.',
+            'rencana_perbaikan.required' => 'Rencana perbaikan wajib diisi.',
+            'pic.required' => 'PIC wajib diisi.',
+            'deadline.required' => 'Batas waktu wajib diisi.',
+            'deadline.date' => 'Format batas waktu tidak valid.',
+            'status.required' => 'Status wajib dipilih.',
+            'status.in' => 'Status tidak valid.',
+        ]);
+
+        TindakLanjut::create($validated);
+
+        $this->sinkronkanStatusTemuan(
+            Temuan::findOrFail($validated['temuan_id'])
+        );
+
+        return redirect()
+            ->route('temuan.show', $validated['temuan_id'])
+            ->with('success', 'Tindak lanjut berhasil ditambahkan.');
+    }
+
+    public function edit(TindakLanjut $tindaklanjut)
+    {
+        $tindaklanjut->load('temuan.inspeksi.bandara');
+
+        return view('tindaklanjut.edit', compact('tindaklanjut'));
+    }
+
+    public function update(Request $request, TindakLanjut $tindaklanjut)
+    {
+        $validated = $request->validate([
+            'rencana_perbaikan' => ['required', 'string'],
+            'pic' => ['required', 'string', 'max:255'],
+            'deadline' => ['required', 'date'],
+            'status' => [
+                'required',
+                Rule::in([
+                    'Open',
+                    'Dalam Tindak Lanjut',
+                    'Selesai',
+                ]),
+            ],
+            'catatan' => ['nullable', 'string'],
+        ]);
+
+        $tindaklanjut->update($validated);
+
+        $this->sinkronkanStatusTemuan($tindaklanjut->temuan);
+
+        return redirect()
+            ->route('temuan.show', $tindaklanjut->temuan_id)
+            ->with('success', 'Tindak lanjut berhasil diperbarui.');
+    }
+
+    public function destroy(TindakLanjut $tindaklanjut)
+    {
+        $temuan = $tindaklanjut->temuan;
+
+        $tindaklanjut->delete();
+
+        $this->sinkronkanStatusTemuan($temuan);
+
+        return redirect()
+            ->route('temuan.show', $temuan->id)
+            ->with('success', 'Tindak lanjut berhasil dihapus.');
+    }
+
+    private function sinkronkanStatusTemuan(Temuan $temuan): void
+    {
+        $statusTindakLanjut = $temuan->tindakLanjut()
+            ->pluck('status');
+
+        if ($statusTindakLanjut->isEmpty()) {
+            $statusTemuan = 'Open';
+        } elseif ($statusTindakLanjut->every(
+            fn ($status) => $status === 'Selesai'
+        )) {
+            $statusTemuan = 'Selesai';
+        } elseif ($statusTindakLanjut->contains(
+            fn ($status) => in_array(
+                $status,
+                ['Dalam Tindak Lanjut', 'Selesai'],
+                true
+            )
+        )) {
+            $statusTemuan = 'Dalam Tindak Lanjut';
+        } else {
+            $statusTemuan = 'Open';
+        }
+
+        $temuan->update([
+            'status' => $statusTemuan,
+        ]);
+    }
+}
