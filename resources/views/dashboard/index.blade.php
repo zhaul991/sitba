@@ -1175,8 +1175,8 @@
     </div>
 
 
-    {{-- Status temuan --}}
-    <div class="grid gap-6">
+    {{-- Status dan tindak lanjut --}}
+    <div class="grid gap-6 xl:grid-cols-2">
 
         {{-- Status temuan --}}
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -1247,6 +1247,89 @@
                     <p class="mt-1 text-xs text-emerald-600">
                         {{ $persentaseClose }}% dari temuan
                     </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+
+        {{-- Tindak lanjut --}}
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+
+            <div class="flex items-center justify-between">
+
+                <div>
+                    <h3 class="font-bold text-slate-800">
+                        Monitoring Tindak Lanjut
+                    </h3>
+
+                    <p class="mt-1 text-sm text-slate-500">
+                        Pemantauan penyelesaian temuan.
+                    </p>
+                </div>
+
+                @if ($tindakLanjutOverdue > 0)
+
+                    <span class="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700">
+                        {{ $tindakLanjutOverdue }} terlambat
+                    </span>
+
+                @else
+
+                    <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
+                        Tidak ada terlambat
+                    </span>
+
+                @endif
+
+            </div>
+
+            <div class="mt-6 grid grid-cols-2 gap-4">
+
+                <div class="rounded-xl border border-slate-200 p-4">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        Belum selesai
+                    </p>
+
+                    <p class="mt-2 text-2xl font-bold text-slate-800">
+                        {{ number_format($tindakLanjutOpen) }}
+                    </p>
+                </div>
+
+                <div class="rounded-xl border border-slate-200 p-4">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        Sudah selesai
+                    </p>
+
+                    <p class="mt-2 text-2xl font-bold text-emerald-600">
+                        {{ number_format($tindakLanjutClose) }}
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="mt-5">
+
+                <div class="mb-2 flex justify-between text-xs">
+                    <span class="font-semibold text-slate-500">
+                        Progres
+                    </span>
+
+                    <span class="font-bold text-slate-700">
+                        {{ $persentaseTindakLanjutClose }}%
+                    </span>
+                </div>
+
+                <div class="h-2 overflow-hidden rounded-full bg-slate-100">
+
+                    <div
+                        class="h-full rounded-full bg-blue-600"
+                        style="width: {{ min($persentaseTindakLanjutClose, 100) }}%"
+                    ></div>
 
                 </div>
 
@@ -1637,46 +1720,20 @@
 
     {{-- Activity Timeline --}}
     @php
-        $aktivitasTemuan = $temuanTerbaru
-            ->take(4)
-            ->map(function ($temuan) {
-                return [
-                    'jenis' => 'temuan',
-                    'judul' => 'Temuan ' . $temuan->nomor_temuan,
-                    'deskripsi' => $temuan->uraian_temuan,
-                    'bandara' => $temuan->inspeksi?->bandara?->nama_bandara
-                        ?? 'Bandara tidak tersedia',
-                    'status' => $temuan->status,
-                    'waktu' => $temuan->created_at,
-                    'url' => route('temuan.show', $temuan),
-                ];
-            });
+        $aktivitasDashboard = ($activities ?? collect())
+            ->map(function ($log) {
 
-        $aktivitasTindakLanjut = $tindakLanjutMendesak
-            ->filter(fn ($item) => $item->temuan)
-            ->take(3)
-            ->map(function ($item) {
                 return [
-                    'jenis' => 'tindak-lanjut',
-                    'judul' => 'Tindak lanjut ' . $item->temuan->nomor_temuan,
-                    'deskripsi' => $item->deadline
-                        ? 'Deadline ' . $item->deadline->format('d F Y')
-                        : 'Deadline belum ditentukan',
-                    'bandara' => $item->temuan?->inspeksi?->bandara?->nama_bandara
-                        ?? 'Bandara tidak tersedia',
-                    'status' => $item->deadline && $item->deadline->isPast()
-                        ? 'Terlambat'
-                        : 'Aktif',
-                    'waktu' => $item->updated_at,
-                    'url' => route('temuan.show', $item->temuan),
+                    'jenis' => strtolower($log->model),
+                    'judul' => ucfirst($log->action) . ' ' . strtolower($log->model),
+                    'deskripsi' => $log->description,
+                    'bandara' => '-',
+                    'status' => ucfirst($log->action),
+                    'waktu' => $log->created_at,
+                    'url' => '#',
                 ];
-            });
 
-        $aktivitasDashboard = $aktivitasTemuan
-            ->concat($aktivitasTindakLanjut)
-            ->sortByDesc('waktu')
-            ->take(6)
-            ->values();
+            });
     @endphp
 
     <div
@@ -1741,9 +1798,9 @@
                     @foreach ($aktivitasDashboard as $aktivitas)
 
                         @php
-                            $isTemuan = $aktivitas['jenis'] === 'temuan';
-                            $isTerlambat = $aktivitas['status'] === 'Terlambat';
-                            $isClose = $aktivitas['status'] === 'Close';
+                            $isCreate = strtolower($aktivitas['status']) === 'create';
+                            $isUpdate = strtolower($aktivitas['status']) === 'update';
+                            $isDelete = strtolower($aktivitas['status']) === 'delete';
                         @endphp
 
                         <a
@@ -1754,22 +1811,22 @@
                                 class="relative z-10 flex h-10 w-10 shrink-0
                                        items-center justify-center rounded-2xl
                                        border-4 border-white shadow-sm
-                                       {{ $isTerlambat
+                                       {{ $isDelete
                                             ? 'bg-red-100 text-red-700'
-                                            : ($isClose
+                                            : ($isCreate
                                                 ? 'bg-emerald-100 text-emerald-700'
-                                                : ($isTemuan
-                                                    ? 'bg-amber-100 text-amber-700'
-                                                    : 'bg-blue-100 text-blue-700')) }}"
+                                                : ($isUpdate
+                                                    ? 'bg-blue-100 text-blue-700'
+                                                    : 'bg-slate-100 text-slate-700')) }}"
                             >
-                                @if ($isTerlambat)
-                                    !
-                                @elseif ($isClose)
-                                    ✓
-                                @elseif ($isTemuan)
-                                    ⚠
-                                @else
+                                @if ($isDelete)
+                                    ×
+                                @elseif ($isCreate)
+                                    +
+                                @elseif ($isUpdate)
                                     ↻
+                                @else
+                                    •
                                 @endif
                             </div>
 
@@ -1798,11 +1855,11 @@
                                                 class="rounded-full px-2.5 py-1
                                                        text-[11px] font-black
                                                        uppercase tracking-wide
-                                                       {{ $isTerlambat
+                                                       {{ $isDelete
                                                             ? 'bg-red-100 text-red-700'
-                                                            : ($isClose
+                                                            : ($isCreate
                                                                 ? 'bg-emerald-100 text-emerald-700'
-                                                                : ($isTemuan
+                                                                : ($isUpdate
                                                                     ? 'bg-amber-100 text-amber-700'
                                                                     : 'bg-blue-100 text-blue-700')) }}"
                                             >

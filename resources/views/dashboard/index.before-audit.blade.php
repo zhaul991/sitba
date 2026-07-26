@@ -1720,46 +1720,18 @@
 
     {{-- Activity Timeline --}}
     @php
-        $aktivitasTemuan = $temuanTerbaru
-            ->take(4)
-            ->map(function ($temuan) {
+        $aktivitasDashboard = ($activities ?? collect())
+            ->map(function ($log) {
                 return [
-                    'jenis' => 'temuan',
-                    'judul' => 'Temuan ' . $temuan->nomor_temuan,
-                    'deskripsi' => $temuan->uraian_temuan,
-                    'bandara' => $temuan->inspeksi?->bandara?->nama_bandara
-                        ?? 'Bandara tidak tersedia',
-                    'status' => $temuan->status,
-                    'waktu' => $temuan->created_at,
-                    'url' => route('temuan.show', $temuan),
+                    'jenis' => strtolower($log->model),
+                    'judul' => ucfirst($log->action) . ' ' . strtolower($log->model),
+                    'deskripsi' => $log->description,
+                    'bandara' => '-',
+                    'status' => ucfirst($log->action),
+                    'waktu' => $log->created_at,
+                    'url' => '#',
                 ];
             });
-
-        $aktivitasTindakLanjut = $tindakLanjutMendesak
-            ->filter(fn ($item) => $item->temuan)
-            ->take(3)
-            ->map(function ($item) {
-                return [
-                    'jenis' => 'tindak-lanjut',
-                    'judul' => 'Tindak lanjut ' . $item->temuan->nomor_temuan,
-                    'deskripsi' => $item->deadline
-                        ? 'Deadline ' . $item->deadline->format('d F Y')
-                        : 'Deadline belum ditentukan',
-                    'bandara' => $item->temuan?->inspeksi?->bandara?->nama_bandara
-                        ?? 'Bandara tidak tersedia',
-                    'status' => $item->deadline && $item->deadline->isPast()
-                        ? 'Terlambat'
-                        : 'Aktif',
-                    'waktu' => $item->updated_at,
-                    'url' => route('temuan.show', $item->temuan),
-                ];
-            });
-
-        $aktivitasDashboard = $aktivitasTemuan
-            ->concat($aktivitasTindakLanjut)
-            ->sortByDesc('waktu')
-            ->take(6)
-            ->values();
     @endphp
 
     <div
@@ -1824,9 +1796,9 @@
                     @foreach ($aktivitasDashboard as $aktivitas)
 
                         @php
-                            $isTemuan = $aktivitas['jenis'] === 'temuan';
-                            $isTerlambat = $aktivitas['status'] === 'Terlambat';
-                            $isClose = $aktivitas['status'] === 'Close';
+                            $isCreate = strtolower($aktivitas['status']) === 'create';
+                            $isUpdate = strtolower($aktivitas['status']) === 'update';
+                            $isDelete = strtolower($aktivitas['status']) === 'delete';
                         @endphp
 
                         <a
@@ -1837,22 +1809,22 @@
                                 class="relative z-10 flex h-10 w-10 shrink-0
                                        items-center justify-center rounded-2xl
                                        border-4 border-white shadow-sm
-                                       {{ $isTerlambat
+                                       {{ $isDelete
                                             ? 'bg-red-100 text-red-700'
-                                            : ($isClose
+                                            : ($isCreate
                                                 ? 'bg-emerald-100 text-emerald-700'
-                                                : ($isTemuan
-                                                    ? 'bg-amber-100 text-amber-700'
-                                                    : 'bg-blue-100 text-blue-700')) }}"
+                                                : ($isUpdate
+                                                    ? 'bg-blue-100 text-blue-700'
+                                                    : 'bg-slate-100 text-slate-700')) }}"
                             >
-                                @if ($isTerlambat)
-                                    !
-                                @elseif ($isClose)
-                                    ✓
-                                @elseif ($isTemuan)
-                                    ⚠
-                                @else
+                                @if ($isDelete)
+                                    ×
+                                @elseif ($isCreate)
+                                    +
+                                @elseif ($isUpdate)
                                     ↻
+                                @else
+                                    •
                                 @endif
                             </div>
 
@@ -1881,11 +1853,11 @@
                                                 class="rounded-full px-2.5 py-1
                                                        text-[11px] font-black
                                                        uppercase tracking-wide
-                                                       {{ $isTerlambat
+                                                       {{ $isDelete
                                                             ? 'bg-red-100 text-red-700'
-                                                            : ($isClose
+                                                            : ($isCreate
                                                                 ? 'bg-emerald-100 text-emerald-700'
-                                                                : ($isTemuan
+                                                                : ($isUpdate
                                                                     ? 'bg-amber-100 text-amber-700'
                                                                     : 'bg-blue-100 text-blue-700')) }}"
                                             >
