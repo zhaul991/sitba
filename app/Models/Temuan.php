@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Temuan extends Model
 {
@@ -35,5 +36,18 @@ class Temuan extends Model
     public function tindakLanjut()
     {
         return $this->hasMany(TindakLanjut::class);
+    }
+
+    public function laporans(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Laporan::class,
+            'laporan_temuan'
+        )
+            ->withPivot([
+                'menutup_temuan',
+                'catatan_verifikasi',
+            ])
+            ->withTimestamps();
     }
 }

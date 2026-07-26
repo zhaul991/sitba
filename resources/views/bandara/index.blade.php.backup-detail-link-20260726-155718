@@ -4,28 +4,30 @@
 
 <div class="p-6 md:p-8">
 
+    {{-- Header halaman --}}
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
         <div>
             <h1 class="text-3xl font-bold text-gray-800">
-                Data Inspektur
+                Data Bandara
             </h1>
 
             <p class="mt-2 text-gray-500">
-                Kelola Data Inspektur yang terdaftar dalam sistem SITBA.
+                Kelola daftar bandar udara yang terdaftar dalam sistem SITBA.
             </p>
         </div>
 
-        <a href="{{ route('petugas.create') }}"
+        <a href="{{ route('bandara.create') }}"
            class="inline-flex items-center justify-center rounded-xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700">
 
-            + Tambah Inspektur
+            + Tambah Bandara
 
         </a>
 
     </div>
 
 
+    {{-- Pesan sukses --}}
     @if (session('success'))
 
         <div class="mb-6 rounded-xl border border-green-200 bg-green-50 px-5 py-4 text-green-700">
@@ -35,19 +37,21 @@
     @endif
 
 
+    {{-- Card utama --}}
     <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
 
+        {{-- Search --}}
         <div class="border-b border-gray-200 p-5">
 
             <form method="GET"
-                  action="{{ route('petugas.index') }}"
+                  action="{{ route('bandara.index') }}"
                   class="flex flex-col gap-3 sm:flex-row">
 
                 <input
                     type="text"
                     name="keyword"
                     value="{{ request('keyword') }}"
-                    placeholder="Cari nama inspektur atau NIP..."
+                    placeholder="Cari nama bandara, kode, atau lokasi..."
                     class="w-full rounded-xl border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 >
 
@@ -61,7 +65,7 @@
 
                 @if (request('keyword'))
 
-                    <a href="{{ route('petugas.index') }}"
+                    <a href="{{ route('bandara.index') }}"
                        class="rounded-xl border border-gray-300 px-5 py-3 text-center text-sm font-semibold text-gray-600 transition hover:bg-gray-50">
 
                         Reset
@@ -75,6 +79,7 @@
         </div>
 
 
+        {{-- Tabel --}}
         <div class="overflow-x-auto">
 
             <table class="min-w-full divide-y divide-gray-200">
@@ -88,11 +93,19 @@
                         </th>
 
                         <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                            Nama Inspektur
+                            Nama Bandara
                         </th>
 
                         <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                            NIP
+                            Kode
+                        </th>
+
+                        <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                            Lokasi
+                        </th>
+
+                        <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                            Status
                         </th>
 
                         <th class="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
@@ -106,18 +119,18 @@
 
                 <tbody class="divide-y divide-gray-100 bg-white">
 
-                    @forelse ($petugas as $item)
+                    @forelse ($bandaras as $bandara)
 
                         <tr class="transition hover:bg-gray-50">
 
                             <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                                {{ $petugas->firstItem() + $loop->index }}
+                                {{ $bandaras->firstItem() + $loop->index }}
                             </td>
 
                             <td class="px-6 py-4">
 
                                 <div class="font-semibold text-gray-800">
-                                    {{ $item->nama_petugas }}
+                                    {{ $bandara->nama_bandara }}
                                 </div>
 
                             </td>
@@ -125,8 +138,30 @@
                             <td class="whitespace-nowrap px-6 py-4">
 
                                 <span class="rounded-lg bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
-                                    {{ $item->nip }}
+                                    {{ $bandara->kode_bandara }}
                                 </span>
+
+                            </td>
+
+                            <td class="px-6 py-4 text-sm text-gray-600">
+                                {{ $bandara->lokasi }}
+                            </td>
+
+                            <td class="whitespace-nowrap px-6 py-4">
+
+                                @if ($bandara->status === 'Aktif')
+
+                                    <span class="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                                        Aktif
+                                    </span>
+
+                                @else
+
+                                    <span class="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                                        Tidak Aktif
+                                    </span>
+
+                                @endif
 
                             </td>
 
@@ -134,17 +169,18 @@
 
                                 <div class="flex justify-end gap-2">
 
-                                    <a href="{{ route('petugas.edit', $item) }}"
+                                    <a href="{{ route('bandara.edit', $bandara) }}"
                                        class="rounded-lg bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-100">
 
                                         Edit
 
                                     </a>
 
+
                                     <form
-                                        action="{{ route('petugas.destroy', $item) }}"
+                                        action="{{ route('bandara.destroy', $bandara) }}"
                                         method="POST"
-                                        onsubmit="return confirm('Yakin ingin menghapus data inspektur ini?')">
+                                        onsubmit="return confirm('Yakin ingin menghapus data bandara ini?')">
 
                                         @csrf
                                         @method('DELETE')
@@ -169,19 +205,19 @@
 
                         <tr>
 
-                            <td colspan="4"
+                            <td colspan="6"
                                 class="px-6 py-16 text-center">
 
                                 <div class="text-4xl">
-                                    👷
+                                    ✈️
                                 </div>
 
                                 <p class="mt-3 font-semibold text-gray-700">
-                                    Data inspektur belum tersedia
+                                    Data bandara belum tersedia
                                 </p>
 
                                 <p class="mt-1 text-sm text-gray-500">
-                                    Tambahkan inspektur pertama ke dalam sistem.
+                                    Tambahkan data bandara pertama ke dalam sistem.
                                 </p>
 
                             </td>
@@ -197,10 +233,11 @@
         </div>
 
 
-        @if ($petugas->hasPages())
+        {{-- Pagination --}}
+        @if ($bandaras->hasPages())
 
             <div class="border-t border-gray-200 px-6 py-4">
-                {{ $petugas->links() }}
+                {{ $bandaras->links() }}
             </div>
 
         @endif

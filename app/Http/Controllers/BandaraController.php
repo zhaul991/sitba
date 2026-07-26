@@ -48,7 +48,74 @@ class BandaraController extends Controller
 
     public function show(Bandara $bandara)
     {
-        return redirect()->route('bandara.edit', $bandara);
+        $jumlahInspeksi = $bandara
+            ->inspeksis()
+            ->count();
+
+        $totalTemuan = $bandara
+            ->inspeksis()
+            ->withCount('temuans')
+            ->get()
+            ->sum('temuans_count');
+
+        $temuanOpen = $bandara
+            ->inspeksis()
+            ->whereHas('temuans', function ($query) {
+                $query->where('status', 'Open');
+            })
+            ->withCount([
+                'temuans as temuan_open_count' => function ($query) {
+                    $query->where('status', 'Open');
+                },
+            ])
+            ->get()
+            ->sum('temuan_open_count');
+
+        $temuanClose = $bandara
+            ->inspeksis()
+            ->whereHas('temuans', function ($query) {
+                $query->where('status', 'Close');
+            })
+            ->withCount([
+                'temuans as temuan_close_count' => function ($query) {
+                    $query->where('status', 'Close');
+                },
+            ])
+            ->get()
+            ->sum('temuan_close_count');
+
+        $inspeksiTerakhir = $bandara
+            ->inspeksis()
+            ->latest('tanggal')
+            ->first();
+
+        $inspeksiTerbaru = $bandara
+            ->inspeksis()
+            ->with('petugas')
+            ->withCount('temuans')
+            ->latest('tanggal')
+            ->limit(5)
+            ->get();
+
+        $temuanTerbaru = \App\Models\Temuan::query()
+            ->with('inspeksi')
+            ->whereHas('inspeksi', function ($query) use ($bandara) {
+                $query->where('bandara_id', $bandara->id);
+            })
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        return view('bandara.show', compact(
+            'bandara',
+            'jumlahInspeksi',
+            'totalTemuan',
+            'temuanOpen',
+            'temuanClose',
+            'inspeksiTerakhir',
+            'inspeksiTerbaru',
+            'temuanTerbaru'
+        ));
     }
 
     public function edit(Bandara $bandara)

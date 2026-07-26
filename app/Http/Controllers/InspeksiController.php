@@ -11,27 +11,138 @@ class InspeksiController extends Controller
 {
     public function index(Request $request)
     {
-        $keyword = $request->keyword;
+        /*
+         * Mendukung:
+         * - Form Inspeksi: ?keyword=...
+         * - Global Search: ?q=...
+         */
+        $keyword = trim((string) $request->query(
+            'keyword',
+            $request->query('q', '')
+        ));
 
-        $inspeksis = Inspeksi::with(['bandara', 'petugas'])
-            ->when($keyword, function ($query, $keyword) {
-                $query->where(function ($query) use ($keyword) {
-                    $query->where('keterangan', 'like', '%' . $keyword . '%')
-                        ->orWhereHas('bandara', function ($query) use ($keyword) {
-                            $query->where('nama_bandara', 'like', '%' . $keyword . '%')
-                                ->orWhere('kode_bandara', 'like', '%' . $keyword . '%');
-                        })
-                        ->orWhereHas('petugas', function ($query) use ($keyword) {
-                            $query->where('nama_petugas', 'like', '%' . $keyword . '%')
-                                ->orWhere('nip', 'like', '%' . $keyword . '%');
-                        });
-                });
-            })
+        $bandaraId = $request->filled('bandara_id')
+            ? $request->integer('bandara_id')
+            : null;
+
+        $petugasId = $request->filled('petugas_id')
+            ? $request->integer('petugas_id')
+            : null;
+
+        $tahun = $request->filled('tahun')
+            ? $request->integer('tahun')
+            : null;
+
+        $queryInspeksi = Inspeksi::query()
+            ->with([
+                'bandara',
+                'petugas',
+            ])
+            ->when(
+                $keyword !== '',
+                function ($query) use ($keyword) {
+                    $query->where(
+                        function ($searchQuery) use ($keyword) {
+                            $searchQuery
+                                ->where(
+                                    'keterangan',
+                                    'like',
+                                    "%{$keyword}%"
+                                )
+                                ->orWhereHas(
+                                    'bandara',
+                                    function ($bandaraQuery) use ($keyword) {
+                                        $bandaraQuery
+                                            ->where(
+                                                'nama_bandara',
+                                                'like',
+                                                "%{$keyword}%"
+                                            )
+                                            ->orWhere(
+                                                'kode_bandara',
+                                                'like',
+                                                "%{$keyword}%"
+                                            );
+                                    }
+                                )
+                                ->orWhereHas(
+                                    'petugas',
+                                    function ($petugasQuery) use ($keyword) {
+                                        $petugasQuery
+                                            ->where(
+                                                'nama_petugas',
+                                                'like',
+                                                "%{$keyword}%"
+                                            )
+                                            ->orWhere(
+                                                'nip',
+                                                'like',
+                                                "%{$keyword}%"
+                                            );
+                                    }
+                                );
+                        }
+                    );
+                }
+            )
+            ->when(
+                $bandaraId,
+                function ($query, $bandaraId) {
+                    $query->where('bandara_id', $bandaraId);
+                }
+            )
+            ->when(
+                $petugasId,
+                function ($query, $petugasId) {
+                    $query->whereHas(
+                        'petugas',
+                        function ($petugasQuery) use ($petugasId) {
+                            $petugasQuery->where(
+                                'petugas.id',
+                                $petugasId
+                            );
+                        }
+                    );
+                }
+            )
+            ->when(
+                $tahun,
+                function ($query, $tahun) {
+                    $query->whereYear('tanggal', $tahun);
+                }
+            );
+
+        $inspeksis = (clone $queryInspeksi)
             ->latest('tanggal')
             ->paginate(10)
             ->withQueryString();
 
-        return view('inspeksi.index', compact('inspeksis'));
+        $daftarBandara = Bandara::query()
+            ->orderBy('nama_bandara')
+            ->get();
+
+        $daftarPetugas = Petugas::query()
+            ->orderBy('nama_petugas')
+            ->get();
+
+        $daftarTahun = Inspeksi::query()
+            ->whereNotNull('tanggal')
+            ->orderByDesc('tanggal')
+            ->pluck('tanggal')
+            ->map(function ($tanggal) {
+                return \Illuminate\Support\Carbon::parse(
+                    $tanggal
+                )->year;
+            })
+            ->unique()
+            ->values();
+
+        return view('inspeksi.index', compact(
+            'inspeksis',
+            'daftarBandara',
+            'daftarPetugas',
+            'daftarTahun'
+        ));
     }
 
     public function create()

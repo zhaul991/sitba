@@ -129,9 +129,16 @@
 
                             <td class="px-6 py-4">
 
-                                <div class="font-semibold text-gray-800">
+                                <a
+                                    href="{{ route('bandara.show', $bandara) }}"
+                                    class="inline-flex items-center gap-2 font-semibold text-gray-800 transition hover:text-blue-600"
+                                >
                                     {{ $bandara->nama_bandara }}
-                                </div>
+
+                                    <span class="text-sm text-gray-400">
+                                        →
+                                    </span>
+                                </a>
 
                             </td>
 
@@ -168,6 +175,13 @@
                             <td class="whitespace-nowrap px-6 py-4 text-right">
 
                                 <div class="flex justify-end gap-2">
+
+                                    <a
+                                        href="{{ route('bandara.show', $bandara) }}"
+                                        class="rounded-lg bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+                                    >
+                                        Detail
+                                    </a>
 
                                     <a href="{{ route('bandara.edit', $bandara) }}"
                                        class="rounded-lg bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-100">

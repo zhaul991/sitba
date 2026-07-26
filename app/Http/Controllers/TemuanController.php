@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bandara;
 use App\Models\Inspeksi;
 use App\Models\Temuan;
 use Illuminate\Http\Request;
@@ -11,15 +12,28 @@ class TemuanController extends Controller
 {
     public function index(Request $request)
     {
-        $keyword = $request->keyword;
-        $status = $request->status;
-        $tingkatRisiko = $request->tingkat_risiko;
+        /*
+         * Mendukung pencarian dari:
+         * - Form halaman Temuan: ?keyword=...
+         * - Global Search SITBA: ?q=...
+         */
+        $keyword = trim((string) $request->query(
+            'keyword',
+            $request->query('q', '')
+        ));
 
-        $temuans = Temuan::with([
-                'inspeksi.bandara',
-                'foto',
-                'tindakLanjut',
-            ])
+        $status = $request->query('status');
+        $tingkatRisiko = $request->query('tingkat_risiko');
+
+        $tahun = $request->filled('tahun')
+            ? $request->integer('tahun')
+            : null;
+
+        $bandaraId = $request->filled('bandara_id')
+            ? $request->integer('bandara_id')
+            : null;
+
+        $queryTemuan = Temuan::query()
             ->when($keyword, function ($query, $keyword) {
                 $query->where(function ($query) use ($keyword) {
                     $query
@@ -61,17 +75,74 @@ class TemuanController extends Controller
                         );
                 });
             })
+            ->when($bandaraId, function ($query, $bandaraId) {
+                $query->whereHas(
+                    'inspeksi',
+                    function ($query) use ($bandaraId) {
+                        $query->where('bandara_id', $bandaraId);
+                    }
+                );
+            })
+            ->when($tahun, function ($query, $tahun) {
+                $query->whereHas(
+                    'inspeksi',
+                    function ($query) use ($tahun) {
+                        $query->whereYear('tanggal', $tahun);
+                    }
+                );
+            })
             ->when($status, function ($query, $status) {
                 $query->where('status', $status);
             })
             ->when($tingkatRisiko, function ($query, $tingkatRisiko) {
                 $query->where('tingkat_risiko', $tingkatRisiko);
-            })
+            });
+
+        $totalTemuan = (clone $queryTemuan)->count();
+
+        $totalOpen = (clone $queryTemuan)
+            ->where('status', 'Open')
+            ->count();
+
+        $totalClose = (clone $queryTemuan)
+            ->where('status', 'Close')
+            ->count();
+
+        $totalRisikoTinggi = (clone $queryTemuan)
+            ->where('tingkat_risiko', 'Tinggi')
+            ->count();
+
+        $temuans = (clone $queryTemuan)
+            ->with([
+                'inspeksi.bandara',
+                'foto',
+                'tindakLanjut',
+            ])
             ->latest()
             ->paginate(10)
             ->withQueryString();
 
-        return view('temuan.index', compact('temuans'));
+        $daftarBandara = Bandara::query()
+            ->orderBy('nama_bandara')
+            ->get();
+
+        $daftarTahun = Inspeksi::query()
+            ->whereNotNull('tanggal')
+            ->selectRaw('DISTINCT strftime("%Y", tanggal) AS tahun')
+            ->orderByDesc('tahun')
+            ->pluck('tahun')
+            ->filter()
+            ->values();
+
+        return view('temuan.index', compact(
+            'temuans',
+            'daftarBandara',
+            'daftarTahun',
+            'totalTemuan',
+            'totalOpen',
+            'totalClose',
+            'totalRisikoTinggi'
+        ));
     }
 
     public function create(Request $request)
@@ -102,16 +173,17 @@ class TemuanController extends Controller
     }
 
     public function show(Temuan $temuan)
-    {
-        $temuan->load([
-            'inspeksi.bandara',
-            'inspeksi.petugas',
-            'foto',
-            'tindakLanjut',
-        ]);
+{
+    $temuan->load([
+    'inspeksi.bandara',
+    'inspeksi.petugas',
+    'foto',
+    'tindakLanjut',
+    'laporans.bandara',
+]);
 
-        return view('temuan.show', compact('temuan'));
-    }
+    return view('temuan.show', compact('temuan'));
+}
 
     public function edit(Temuan $temuan)
     {

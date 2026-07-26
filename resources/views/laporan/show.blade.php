@@ -2,402 +2,244 @@
 
 @section('content')
 
-<style>
-    @media print {
-        body {
-            background: white !important;
-        }
-
-        .print-hidden {
-            display: none !important;
-        }
-
-        .print-container {
-            box-shadow: none !important;
-            border: none !important;
-        }
-
-        .print-break-inside {
-            break-inside: avoid;
-        }
-    }
-</style>
-
 <div class="space-y-6">
 
     {{-- Action --}}
-    <div class="print-hidden flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <a href="{{ route('laporan.index') }}"
            class="inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50">
             ← Kembali
         </a>
 
-        <button type="button"
-                onclick="window.print()"
-                class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700">
-            Cetak Laporan
-        </button>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ route('laporan.edit', $laporan) }}"
+               class="inline-flex items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-5 py-2.5 text-sm font-semibold text-amber-700 transition hover:bg-amber-100">
+                Edit Laporan
+            </a>
 
+            @if ($laporan->file_surat)
+                <a href="{{ asset('storage/' . $laporan->file_surat) }}"
+                   target="_blank"
+                   class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700">
+                    Lihat Dokumen
+                </a>
+            @endif
+        </div>
     </div>
 
+    {{-- Informasi Laporan --}}
+    <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
 
-    <div class="print-container overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-
-        {{-- Report Header --}}
-        <div class="border-b border-gray-200 px-6 py-8 text-center sm:px-10">
-
-            <p class="text-sm font-semibold uppercase tracking-[0.2em] text-blue-600">
-                Sistem Informasi Temuan Bandar Udara
+        <div class="border-b border-gray-200 px-6 py-7">
+            <p class="text-sm font-semibold uppercase tracking-wider text-blue-600">
+                Laporan Tindak Lanjut
             </p>
 
-            <h1 class="mt-3 text-2xl font-bold uppercase text-gray-900 sm:text-3xl">
-                Laporan Hasil Inspeksi
+            <h1 class="mt-2 text-2xl font-bold text-gray-900">
+                {{ $laporan->nomor_surat }}
             </h1>
 
             <p class="mt-2 text-sm text-gray-500">
-                Rekapitulasi hasil inspeksi dan tindak lanjut temuan
+                Surat tindak lanjut yang disampaikan oleh bandar udara.
             </p>
-
         </div>
 
-
-        {{-- Inspection Information --}}
-        <div class="grid gap-6 border-b border-gray-200 px-6 py-7 sm:px-10 lg:grid-cols-2">
+        <div class="grid gap-6 px-6 py-7 md:grid-cols-2">
 
             <div>
                 <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
                     Bandar Udara
                 </p>
 
-                <p class="mt-2 text-lg font-bold text-gray-900">
-                    {{ $inspeksi->bandara->nama_bandara ?? 'Bandara tidak tersedia' }}
+                <p class="mt-2 text-base font-semibold text-gray-900">
+                    {{ $laporan->bandara->nama_bandara ?? '-' }}
                 </p>
             </div>
 
             <div>
                 <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    Tanggal Inspeksi
+                    Tanggal Surat
                 </p>
 
-                <p class="mt-2 text-lg font-bold text-gray-900">
-                    {{ $inspeksi->tanggal
-                        ? \Carbon\Carbon::parse($inspeksi->tanggal)->translatedFormat('d F Y')
+                <p class="mt-2 text-base font-semibold text-gray-900">
+                    {{ $laporan->tanggal_surat
+                        ? $laporan->tanggal_surat->translatedFormat('d F Y')
                         : '-' }}
                 </p>
             </div>
 
             <div>
                 <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    Petugas Inspeksi
+                    Perihal
                 </p>
 
-                <div class="mt-2 flex flex-wrap gap-2">
-                    @forelse ($inspeksi->petugas as $petugas)
-                        <span class="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
-                            {{ $petugas->nama_petugas }}
-                        </span>
-                    @empty
-                        <span class="text-sm text-gray-500">
-                            Belum ada petugas.
-                        </span>
-                    @endforelse
-                </div>
+                <p class="mt-2 text-sm text-gray-800">
+                    {{ $laporan->perihal ?: '-' }}
+                </p>
             </div>
 
             <div>
                 <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    Keterangan Inspeksi
+                    Dokumen
                 </p>
 
-                <p class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-700">
-                    {{ $inspeksi->keterangan ?: '-' }}
-                </p>
+                <div class="mt-2">
+                    @if ($laporan->file_surat)
+                        <a href="{{ asset('storage/' . $laporan->file_surat) }}"
+                           target="_blank"
+                           class="inline-flex rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100">
+                            Buka PDF
+                        </a>
+                    @else
+                        <span class="text-sm text-gray-500">
+                            Tidak ada dokumen.
+                        </span>
+                    @endif
+                </div>
             </div>
 
-        </div>
-
-
-        {{-- Summary --}}
-        @php
-            $jumlahTemuan = $inspeksi->temuans->count();
-            $jumlahOpen = $inspeksi->temuans
-                ->where('status', 'Open')
-                ->count();
-            $jumlahClose = $inspeksi->temuans
-                ->where('status', 'Close')
-                ->count();
-            $jumlahRisikoTinggi = $inspeksi->temuans
-                ->where('tingkat_risiko', 'Tinggi')
-                ->count();
-        @endphp
-
-        <div class="grid gap-4 border-b border-gray-200 bg-gray-50 px-6 py-6 sm:grid-cols-2 sm:px-10 lg:grid-cols-4">
-
-            <div class="rounded-xl border border-gray-200 bg-white p-4">
+            <div class="md:col-span-2">
                 <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    Total Temuan
+                    Keterangan
                 </p>
 
-                <p class="mt-2 text-2xl font-bold text-gray-900">
-                    {{ $jumlahTemuan }}
-                </p>
-            </div>
-
-            <div class="rounded-xl border border-red-200 bg-red-50 p-4">
-                <p class="text-xs font-semibold uppercase tracking-wider text-red-600">
-                    Open
-                </p>
-
-                <p class="mt-2 text-2xl font-bold text-red-700">
-                    {{ $jumlahOpen }}
-                </p>
-            </div>
-
-            <div class="rounded-xl border border-green-200 bg-green-50 p-4">
-                <p class="text-xs font-semibold uppercase tracking-wider text-green-600">
-                    Close
-                </p>
-
-                <p class="mt-2 text-2xl font-bold text-green-700">
-                    {{ $jumlahClose }}
-                </p>
-            </div>
-
-            <div class="rounded-xl border border-orange-200 bg-orange-50 p-4">
-                <p class="text-xs font-semibold uppercase tracking-wider text-orange-600">
-                    Risiko Tinggi
-                </p>
-
-                <p class="mt-2 text-2xl font-bold text-orange-700">
-                    {{ $jumlahRisikoTinggi }}
+                <p class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-800">
+                    {{ $laporan->keterangan ?: '-' }}
                 </p>
             </div>
 
         </div>
+    </div>
 
+    {{-- Temuan Terkait --}}
+<div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
 
-        {{-- Findings --}}
-        <div class="px-6 py-8 sm:px-10">
+    <div class="flex flex-col gap-3 border-b border-gray-200 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h2 class="text-lg font-bold text-gray-900">
+                Temuan yang Ditindaklanjuti
+            </h2>
 
-            <div class="mb-6">
-                <p class="text-sm font-semibold uppercase tracking-wider text-blue-600">
-                    Hasil Inspeksi
-                </p>
+            <p class="mt-1 text-sm text-gray-500">
+                Daftar temuan yang ditutup berdasarkan laporan tindak lanjut ini.
+            </p>
+        </div>
 
-                <h2 class="mt-2 text-xl font-bold text-gray-900">
-                    Daftar Temuan
-                </h2>
-            </div>
+        <span class="inline-flex w-fit items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
+            {{ $laporan->temuans->count() }} Temuan
+        </span>
+    </div>
 
-            <div class="space-y-6">
+    <div class="space-y-4 p-6">
 
-                @forelse ($inspeksi->temuans as $index => $temuan)
+        @forelse ($laporan->temuans as $temuan)
 
-                    @php
-                        $statusClass = $temuan->status === 'Close'
-                            ? 'bg-green-50 text-green-700 border-green-200'
-                            : 'bg-red-50 text-red-700 border-red-200';
+            @php
+                $statusClass = $temuan->status === 'Close'
+                    ? 'border-green-200 bg-green-50 text-green-700'
+                    : 'border-amber-200 bg-amber-50 text-amber-700';
+            @endphp
 
-                        $risikoClass = $temuan->tingkat_risiko === 'Tinggi'
-                            ? 'bg-red-50 text-red-700 border-red-200'
-                            : 'bg-green-50 text-green-700 border-green-200';
-                    @endphp
+            <div class="rounded-2xl border border-gray-200 p-5 transition hover:border-blue-200 hover:shadow-sm">
 
-                    <article class="print-break-inside overflow-hidden rounded-2xl border border-gray-200">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 
-                        <div class="flex flex-col gap-4 border-b border-gray-200 bg-gray-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-
-                            <div>
-                                <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                                    Temuan {{ $index + 1 }}
-                                </p>
-
-                                <h3 class="mt-1 text-lg font-bold text-gray-900">
-                                    {{ $temuan->nomor_temuan ?: 'Nomor temuan belum tersedia' }}
-                                </h3>
-                            </div>
-
-                            <div class="flex flex-wrap gap-2">
-
-                                <span class="rounded-full border px-3 py-1 text-xs font-bold {{ $risikoClass }}">
-                                    Risiko {{ $temuan->tingkat_risiko }}
-                                </span>
-
-                                <span class="rounded-full border px-3 py-1 text-xs font-bold {{ $statusClass }}">
-                                    {{ $temuan->status }}
-                                </span>
-
-                            </div>
-
-                        </div>
-
-                        <div class="grid gap-6 px-5 py-6 lg:grid-cols-2">
-
-                            <div class="lg:col-span-2">
-                                <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                                    Uraian Temuan
-                                </p>
-
-                                <p class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-800">
-                                    {{ $temuan->uraian_temuan ?: '-' }}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                                    Unsur / Elemen
-                                </p>
-
-                                <p class="mt-2 text-sm font-medium text-gray-800">
-                                    {{ $temuan->unsur_elemen ?: '-' }}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                                    Lokasi
-                                </p>
-
-                                <p class="mt-2 text-sm font-medium text-gray-800">
-                                    {{ $temuan->lokasi ?: '-' }}
-                                </p>
-                            </div>
-
-                            @if ($temuan->status === 'Close')
-                                <div>
-                                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                                        Tanggal Penutupan
-                                    </p>
-
-                                    <p class="mt-2 text-sm font-medium text-gray-800">
-                                        {{ $temuan->tanggal_close
-                                            ? \Carbon\Carbon::parse($temuan->tanggal_close)->translatedFormat('d F Y')
-                                            : '-' }}
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                                        Keterangan Penutupan
-                                    </p>
-
-                                    <p class="mt-2 whitespace-pre-line text-sm text-gray-800">
-                                        {{ $temuan->keterangan_penutupan ?: '-' }}
-                                    </p>
-                                </div>
-                            @endif
-
-                        </div>
-
-
-                        {{-- Follow Up --}}
-                        <div class="border-t border-gray-200 bg-gray-50 px-5 py-6">
-
-                            <h4 class="text-sm font-bold uppercase tracking-wider text-gray-700">
-                                Tindak Lanjut
-                            </h4>
-
-                            <div class="mt-4 space-y-4">
-
-                                @forelse ($temuan->tindakLanjut as $tl)
-
-                                    @php
-                                        $tlStatusClass = match ($tl->status) {
-                                            'Selesai' => 'bg-green-50 text-green-700 border-green-200',
-                                            'Dalam Tindak Lanjut' => 'bg-blue-50 text-blue-700 border-blue-200',
-                                            default => 'bg-red-50 text-red-700 border-red-200',
-                                        };
-                                    @endphp
-
-                                    <div class="rounded-xl border border-gray-200 bg-white p-5">
-
-                                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-
-                                            <p class="text-sm font-bold text-gray-900">
-                                                {{ $tl->rencana_perbaikan ?: 'Rencana perbaikan belum tersedia' }}
-                                            </p>
-
-                                            <span class="w-fit rounded-full border px-3 py-1 text-xs font-bold {{ $tlStatusClass }}">
-                                                {{ $tl->status }}
-                                            </span>
-
-                                        </div>
-
-                                        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-
-                                            <div>
-                                                <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                                                    PIC
-                                                </p>
-
-                                                <p class="mt-1 text-sm text-gray-800">
-                                                    {{ $tl->pic ?: '-' }}
-                                                </p>
-                                            </div>
-
-                                            <div>
-                                                <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                                                    Deadline
-                                                </p>
-
-                                                <p class="mt-1 text-sm text-gray-800">
-                                                    {{ $tl->deadline
-                                                        ? \Carbon\Carbon::parse($tl->deadline)->translatedFormat('d F Y')
-                                                        : '-' }}
-                                                </p>
-                                            </div>
-
-                                            <div>
-                                                <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                                                    Catatan
-                                                </p>
-
-                                                <p class="mt-1 whitespace-pre-line text-sm text-gray-800">
-                                                    {{ $tl->catatan ?: '-' }}
-                                                </p>
-                                            </div>
-
-                                        </div>
-
-                                    </div>
-
-                                @empty
-
-                                    <div class="rounded-xl border border-dashed border-gray-300 bg-white px-5 py-7 text-center">
-                                        <p class="text-sm font-medium text-gray-500">
-                                            Belum terdapat data tindak lanjut.
-                                        </p>
-                                    </div>
-
-                                @endforelse
-
-                            </div>
-
-                        </div>
-
-                    </article>
-
-                @empty
-
-                    <div class="rounded-2xl border border-dashed border-gray-300 px-6 py-12 text-center">
-                        <p class="text-base font-semibold text-gray-700">
-                            Tidak terdapat temuan
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                            Nomor Temuan
                         </p>
 
-                        <p class="mt-1 text-sm text-gray-500">
-                            Inspeksi ini belum memiliki data temuan.
+                        <h3 class="mt-1 text-lg font-bold text-gray-900">
+                            {{ $temuan->nomor_temuan ?: '-' }}
+                        </h3>
+                    </div>
+
+                    <span class="inline-flex w-fit rounded-full border px-3 py-1 text-xs font-bold {{ $statusClass }}">
+                        {{ $temuan->status }}
+                    </span>
+
+                </div>
+
+                <div class="mt-5 grid gap-5 md:grid-cols-2">
+
+                    <div class="md:col-span-2">
+                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                            Uraian Temuan
+                        </p>
+
+                        <p class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-800">
+                            {{ $temuan->uraian_temuan ?: '-' }}
                         </p>
                     </div>
 
-                @endforelse
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                            Unsur / Elemen
+                        </p>
+
+                        <p class="mt-2 text-sm text-gray-800">
+                            {{ $temuan->unsur_elemen ?: '-' }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                            Lokasi
+                        </p>
+
+                        <p class="mt-2 text-sm text-gray-800">
+                            {{ $temuan->lokasi ?: '-' }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                            Tanggal Ditutup
+                        </p>
+
+                        <p class="mt-2 text-sm font-semibold text-gray-800">
+                            {{ $temuan->tanggal_close
+                                ? \Carbon\Carbon::parse($temuan->tanggal_close)->translatedFormat('d F Y')
+                                : '-' }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                            Dasar Penutupan
+                        </p>
+
+                        <p class="mt-2 whitespace-pre-line text-sm text-gray-800">
+                            {{ $temuan->keterangan_penutupan ?: 'Ditutup berdasarkan laporan ini.' }}
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="mt-5 border-t border-gray-100 pt-4">
+                    <a href="{{ route('temuan.show', $temuan) }}"
+                       class="inline-flex items-center text-sm font-semibold text-blue-600 transition hover:text-blue-800">
+                        Lihat Detail Temuan →
+                    </a>
+                </div>
 
             </div>
 
-        </div>
+        @empty
+
+            <div class="rounded-2xl border border-dashed border-gray-300 px-6 py-12 text-center">
+                <p class="font-semibold text-gray-700">
+                    Belum ada temuan yang dikaitkan
+                </p>
+
+                <p class="mt-2 text-sm text-gray-500">
+                    Laporan ini belum memiliki data temuan.
+                </p>
+            </div>
+
+        @endforelse
 
     </div>
-
 </div>
 
 @endsection

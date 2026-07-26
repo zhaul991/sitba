@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Bandara;
 use App\Models\Inspeksi;
+use App\Models\Laporan;
+use App\Models\Petugas;
 use App\Models\Temuan;
 use App\Models\TindakLanjut;
 use Illuminate\Database\Eloquent\Builder;
@@ -63,6 +65,21 @@ class DashboardController extends Controller
             ->when(
                 $bandaraId,
                 fn (Builder $query) => $query->whereKey($bandaraId)
+            )
+            ->count();
+
+        $jumlahPetugas = Petugas::count();
+
+        $jumlahLaporan = Laporan::query()
+            ->when(
+                $bandaraId,
+                fn (Builder $query) =>
+                    $query->where('bandara_id', $bandaraId)
+            )
+            ->when(
+                $tahun,
+                fn (Builder $query) =>
+                    $query->whereYear('tanggal_surat', $tahun)
             )
             ->count();
 
@@ -279,6 +296,159 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | Data grafik temuan bulanan
+        |--------------------------------------------------------------------------
+        |
+        | Temuan dikelompokkan berdasarkan bulan pelaksanaan inspeksi.
+        | Data tetap mengikuti filter bandara dan tahun pada dashboard.
+        |
+        */
+        $labelBulan = [
+            'Jan',
+            'Feb',
+            'Mar',
+            'Apr',
+            'Mei',
+            'Jun',
+            'Jul',
+            'Agu',
+            'Sep',
+            'Okt',
+            'Nov',
+            'Des',
+        ];
+
+        $dataTemuanBulanan = array_fill(0, 12, 0);
+        $dataTemuanOpenBulanan = array_fill(0, 12, 0);
+        $dataTemuanCloseBulanan = array_fill(0, 12, 0);
+
+        Temuan::query()
+            ->with('inspeksi:id,tanggal')
+            ->tap($filterTemuan)
+            ->get()
+            ->each(function (Temuan $temuan) use (
+                &$dataTemuanBulanan,
+                &$dataTemuanOpenBulanan,
+                &$dataTemuanCloseBulanan
+            ) {
+                if (! $temuan->inspeksi?->tanggal) {
+                    return;
+                }
+
+                $indexBulan = $temuan->inspeksi->tanggal->month - 1;
+
+                $dataTemuanBulanan[$indexBulan]++;
+
+                if ($temuan->status === 'Open') {
+                    $dataTemuanOpenBulanan[$indexBulan]++;
+                }
+
+                if ($temuan->status === 'Close') {
+                    $dataTemuanCloseBulanan[$indexBulan]++;
+                }
+            });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Data grafik temuan adaptif
+        |--------------------------------------------------------------------------
+        */
+        $temuanGrafik = Temuan::query()
+            ->with('inspeksi:id,tanggal')
+            ->tap($filterTemuan)
+            ->get();
+
+        if ($tahun) {
+            $labelGrafikTemuan = [
+                'Jan',
+                'Feb',
+                'Mar',
+                'Apr',
+                'Mei',
+                'Jun',
+                'Jul',
+                'Agu',
+                'Sep',
+                'Okt',
+                'Nov',
+                'Des',
+            ];
+
+            $dataTemuanOpenGrafik = array_fill(0, 12, 0);
+            $dataTemuanCloseGrafik = array_fill(0, 12, 0);
+
+            foreach ($temuanGrafik as $temuan) {
+                if (! $temuan->inspeksi?->tanggal) {
+                    continue;
+                }
+
+                $indexGrafik = $temuan->inspeksi->tanggal->month - 1;
+
+                if ($temuan->status === 'Open') {
+                    $dataTemuanOpenGrafik[$indexGrafik]++;
+                }
+
+                if ($temuan->status === 'Close') {
+                    $dataTemuanCloseGrafik[$indexGrafik]++;
+                }
+            }
+        } else {
+            $labelGrafikTemuan = $temuanGrafik
+                ->filter(
+                    fn (Temuan $temuan) =>
+                        $temuan->inspeksi?->tanggal !== null
+                )
+                ->map(
+                    fn (Temuan $temuan) =>
+                        (string) $temuan->inspeksi->tanggal->year
+                )
+                ->unique()
+                ->sort()
+                ->values()
+                ->all();
+
+            $dataTemuanOpenGrafik = array_fill(
+                0,
+                count($labelGrafikTemuan),
+                0
+            );
+
+            $dataTemuanCloseGrafik = array_fill(
+                0,
+                count($labelGrafikTemuan),
+                0
+            );
+
+            foreach ($temuanGrafik as $temuan) {
+                if (! $temuan->inspeksi?->tanggal) {
+                    continue;
+                }
+
+                $tahunTemuan = (string) $temuan->inspeksi->tanggal->year;
+
+                $indexGrafik = array_search(
+                    $tahunTemuan,
+                    $labelGrafikTemuan,
+                    true
+                );
+
+                if ($indexGrafik === false) {
+                    continue;
+                }
+
+                if ($temuan->status === 'Open') {
+                    $dataTemuanOpenGrafik[$indexGrafik]++;
+                }
+
+                if ($temuan->status === 'Close') {
+                    $dataTemuanCloseGrafik[$indexGrafik]++;
+                }
+            }
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Pilihan filter
@@ -300,8 +470,10 @@ class DashboardController extends Controller
 
         return view('dashboard.index', compact(
             'jumlahBandara',
+            'jumlahPetugas',
             'jumlahInspeksi',
             'jumlahTemuan',
+            'jumlahLaporan',
             'temuanOpen',
             'temuanClose',
             'persentaseSelesai',
@@ -324,7 +496,11 @@ class DashboardController extends Controller
             'daftarTahun',
             'bandaraId',
             'tahun',
-            'bandaraTerpilih'
+            'bandaraTerpilih',
+            'labelGrafikTemuan',
+            'dataTemuanOpenGrafik',
+            'dataTemuanCloseGrafik',
+            'dataTemuanCloseBulanan'
         ));
     }
 }

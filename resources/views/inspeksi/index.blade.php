@@ -26,35 +26,150 @@
         </div>
     @endif
 
-    <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-
-        <div class="border-b border-gray-200 p-5">
-            <form method="GET"
-                  action="{{ route('inspeksi.index') }}"
-                  class="flex flex-col gap-3 sm:flex-row">
+    <x-filter-panel
+        title="Filter Data Inspeksi"
+        description="Cari dan saring kegiatan inspeksi berdasarkan bandara, tahun, atau inspektur."
+    >
+        <form
+            method="GET"
+            action="{{ route('inspeksi.index') }}"
+            class="grid grid-cols-1 gap-4 lg:grid-cols-12"
+        >
+            <div class="lg:col-span-4">
+                <label
+                    for="keyword"
+                    class="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500"
+                >
+                    Pencarian
+                </label>
 
                 <input
+                    id="keyword"
                     type="text"
                     name="keyword"
-                    value="{{ request('keyword') }}"
-                    placeholder="Cari bandara, inspektur, NIP, atau keterangan..."
-                    class="w-full rounded-xl border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    value="{{ request('keyword', request('q')) }}"
+                    placeholder="Bandara, inspektur, NIP, atau keterangan..."
+                    class="w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 >
+            </div>
+
+            <div class="lg:col-span-3">
+                <label
+                    for="bandara_id"
+                    class="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500"
+                >
+                    Bandara
+                </label>
+
+                <select
+                    id="bandara_id"
+                    name="bandara_id"
+                    class="w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                    <option value="">Semua Bandara</option>
+
+                    @foreach ($daftarBandara as $bandara)
+                        <option
+                            value="{{ $bandara->id }}"
+                            @selected(
+                                (string) request('bandara_id')
+                                === (string) $bandara->id
+                            )
+                        >
+                            {{ $bandara->kode_bandara }}
+                            — {{ $bandara->nama_bandara }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="lg:col-span-2">
+                <label
+                    for="tahun"
+                    class="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500"
+                >
+                    Tahun
+                </label>
+
+                <select
+                    id="tahun"
+                    name="tahun"
+                    class="w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                    <option value="">Semua Tahun</option>
+
+                    @foreach ($daftarTahun as $tahun)
+                        <option
+                            value="{{ $tahun }}"
+                            @selected(
+                                (string) request('tahun')
+                                === (string) $tahun
+                            )
+                        >
+                            {{ $tahun }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="lg:col-span-3">
+                <label
+                    for="petugas_id"
+                    class="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500"
+                >
+                    Inspektur
+                </label>
+
+                <select
+                    id="petugas_id"
+                    name="petugas_id"
+                    class="w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                    <option value="">Semua Inspektur</option>
+
+                    @foreach ($daftarPetugas as $inspektur)
+                        <option
+                            value="{{ $inspektur->id }}"
+                            @selected(
+                                (string) request('petugas_id')
+                                === (string) $inspektur->id
+                            )
+                        >
+                            {{ $inspektur->nama_petugas }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div
+                class="flex flex-col gap-3 sm:flex-row lg:col-span-12 lg:justify-end"
+            >
+                @if (
+                    request()->filled('keyword')
+                    || request()->filled('q')
+                    || request()->filled('bandara_id')
+                    || request()->filled('tahun')
+                    || request()->filled('petugas_id')
+                )
+                    <a
+                        href="{{ route('inspeksi.index') }}"
+                        class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                    >
+                        Reset Filter
+                    </a>
+                @endif
 
                 <button
                     type="submit"
-                    class="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700">
-                    Cari
+                    class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+                >
+                    Terapkan Filter
                 </button>
+            </div>
+        </form>
+    </x-filter-panel>
 
-                @if (request('keyword'))
-                    <a href="{{ route('inspeksi.index') }}"
-                       class="rounded-xl border border-gray-300 px-5 py-3 text-center text-sm font-semibold text-gray-600 transition hover:bg-gray-50">
-                        Reset
-                    </a>
-                @endif
-            </form>
-        </div>
+    <div class="mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
 
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">

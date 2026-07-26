@@ -121,69 +121,242 @@
 
             </div>
 
-            @if ($temuan->status === 'Close')
-                <div class="rounded-2xl border border-green-200 bg-green-50 p-6 shadow-sm">
+            @php
+    $laporan = $temuan->laporans->first();
+@endphp
 
-                    <div class="flex items-start gap-4">
+@if ($temuan->status === 'Close')
 
-                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-green-100 text-2xl">
-                            ✓
-                        </div>
+<div class="rounded-2xl border border-green-200 bg-green-50 p-6 shadow-sm">
 
-                        <div class="flex-1">
+    <div class="flex items-start gap-4">
 
-                            <p class="text-sm font-bold uppercase tracking-wide text-green-700">
-                                Temuan Ditutup
-                            </p>
+        <div class="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-2xl">
+            📄
+        </div>
 
-                            <h2 class="mt-1 text-xl font-bold text-green-900">
-                                Seluruh dokumen telah diverifikasi.
-                            </h2>
+        <div class="flex-1">
 
-                            <div class="mt-5 grid gap-5 border-t border-green-200 pt-5 sm:grid-cols-2">
+            <p class="text-sm font-bold uppercase tracking-wide text-green-700">
+                Dasar Penutupan Temuan
+            </p>
 
-                                <div>
-                                    <p class="text-sm font-semibold text-green-700">
-                                        Tanggal Penutupan
-                                    </p>
+            @if($laporan)
 
-                                    <p class="mt-2 font-bold text-green-900">
-                                        {{ $temuan->tanggal_close?->format('d-m-Y') ?? '-' }}
-                                    </p>
-                                </div>
+                <p class="mt-3 text-green-900 leading-relaxed">
 
-                                <div>
-                                    <p class="text-sm font-semibold text-green-700">
-                                        Status
-                                    </p>
+                    Penutupan temuan ini didasarkan pada
+                    <strong>Surat Nomor {{ $laporan->nomor_surat }}</strong>
 
-                                    <span class="mt-2 inline-flex rounded-lg border border-green-300 bg-white px-3 py-1 text-sm font-bold text-green-800">
-                                        Close
-                                    </span>
-                                </div>
+                    @if($laporan->tanggal_surat)
+                        tanggal
+                        <strong>
+                            {{ $laporan->tanggal_surat->locale('id')->translatedFormat('d F Y') }}
+                        </strong>
+                    @endif
 
-                            </div>
+                    @if($laporan->perihal)
+                        tentang
+                        <strong>{{ $laporan->perihal }}</strong>.
+                    @endif
 
-                            @if ($temuan->keterangan_penutupan)
-                                <div class="mt-5 border-t border-green-200 pt-5">
+                </p>
 
-                                    <p class="text-sm font-semibold text-green-700">
-                                        Keterangan Penutupan
-                                    </p>
+                <div class="mt-6 grid gap-5 sm:grid-cols-2">
 
-                                    <p class="mt-2 whitespace-pre-line leading-relaxed text-green-900">
-                                        {{ $temuan->keterangan_penutupan }}
-                                    </p>
+                    <div>
+                        <p class="text-sm font-semibold text-green-700">
+                            Nomor Surat
+                        </p>
 
-                                </div>
-                            @endif
+                        <p class="mt-2 font-bold text-green-900">
+                            {{ $laporan->nomor_surat }}
+                        </p>
+                    </div>
 
-                        </div>
+                    <div>
+                        <p class="text-sm font-semibold text-green-700">
+                            Tanggal Surat
+                        </p>
 
+                        <p class="mt-2 font-bold text-green-900">
+                            {{ $laporan->tanggal_surat?->locale('id')->translatedFormat('d F Y') }}
+                        </p>
                     </div>
 
                 </div>
+
+                <div class="mt-6 flex gap-3 flex-wrap">
+
+                    <a href="{{ Storage::url($laporan->file_surat) }}"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="rounded-xl bg-green-600 px-5 py-3 text-sm font-semibold text-white hover:bg-green-700">
+
+                        📄 Lihat Surat
+
+                    </a>
+
+                    <a href="{{ route('laporan.show',$laporan) }}"
+                       class="rounded-xl border border-green-600 px-5 py-3 text-sm font-semibold text-green-700 hover:bg-green-100">
+
+                        📋 Detail Laporan
+
+                    </a>
+
+                </div>
+
+            @else
+
+                <p class="mt-3 text-green-900">
+
+                    Temuan telah ditutup namun belum terhubung ke laporan.
+
+                </p>
+
             @endif
+
+        </div>
+
+    </div>
+
+</div>
+
+@endif
+
+
+{{-- Riwayat Temuan --}}
+<div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+
+    <div>
+        <h2 class="text-lg font-bold text-gray-800">
+            Riwayat Temuan
+        </h2>
+
+        <p class="mt-1 text-sm text-gray-500">
+            Perjalanan temuan sejak inspeksi sampai penyelesaian.
+        </p>
+    </div>
+
+    <div class="mt-6 space-y-0">
+
+        {{-- Temuan Dibuat --}}
+        <div class="relative flex gap-4 pb-7">
+
+            <div class="absolute left-4 top-8 h-full w-px bg-gray-200"></div>
+
+            <div class="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700">
+                1
+            </div>
+
+            <div class="flex-1">
+
+                <p class="font-bold text-gray-800">
+                    Temuan Dicatat
+                </p>
+
+                <p class="mt-1 text-sm text-gray-500">
+                    {{ $temuan->created_at
+                        ? $temuan->created_at->translatedFormat('d F Y, H:i')
+                        : '-' }}
+                </p>
+
+                <p class="mt-2 text-sm leading-6 text-gray-600">
+                    Temuan dicatat berdasarkan hasil inspeksi di
+                    {{ $temuan->inspeksi?->bandara?->nama_bandara ?? 'bandar udara' }}.
+                </p>
+
+            </div>
+
+        </div>
+
+        {{-- Inspeksi --}}
+        <div class="relative flex gap-4 pb-7">
+
+            <div class="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-sm font-bold text-amber-700">
+                2
+            </div>
+
+            <div class="flex-1">
+
+                <p class="font-bold text-gray-800">
+                    Inspeksi Bandar Udara
+                </p>
+
+                <p class="mt-1 text-sm text-gray-500">
+                    {{ $temuan->inspeksi?->tanggal
+                        ? $temuan->inspeksi->tanggal->translatedFormat('d F Y')
+                        : '-' }}
+                </p>
+
+                <a href="{{ route('inspeksi.show', $temuan->inspeksi_id) }}"
+                   class="mt-2 inline-flex text-sm font-semibold text-blue-600 transition hover:text-blue-800">
+                    Lihat detail inspeksi →
+                </a>
+
+            </div>
+
+        </div>
+
+        {{-- Penutupan --}}
+        @if ($temuan->status === 'Close')
+
+            @php
+                $laporanRiwayat = $temuan->laporans
+                    ->first(function ($laporan) {
+                        return (bool) $laporan->pivot->menutup_temuan;
+                    });
+            @endphp
+
+            <div class="relative flex gap-4">
+
+                <div class="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-sm font-bold text-green-700">
+                    ✓
+                </div>
+
+                <div class="flex-1">
+
+                    <p class="font-bold text-gray-800">
+                        Temuan Ditutup
+                    </p>
+
+                    <p class="mt-1 text-sm text-gray-500">
+                        {{ $temuan->tanggal_close
+                            ? $temuan->tanggal_close->translatedFormat('d F Y')
+                            : '-' }}
+                    </p>
+
+                    @if ($laporanRiwayat)
+
+                        <p class="mt-2 text-sm leading-6 text-gray-600">
+                            Ditutup berdasarkan surat
+                            <span class="font-semibold text-gray-800">
+                                {{ $laporanRiwayat->nomor_surat }}
+                            </span>.
+                        </p>
+
+                        <a href="{{ route('laporan.show', $laporanRiwayat) }}"
+                           class="mt-2 inline-flex text-sm font-semibold text-blue-600 transition hover:text-blue-800">
+                            Lihat laporan tindak lanjut →
+                        </a>
+
+                    @else
+
+                        <p class="mt-2 text-sm text-gray-600">
+                            Temuan ditutup melalui perubahan status secara manual.
+                        </p>
+
+                    @endif
+
+                </div>
+
+            </div>
+
+        @endif
+
+    </div>
+
+</div>
 
             <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
 

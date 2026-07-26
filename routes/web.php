@@ -1,7 +1,5 @@
 <?php
 
-use App\Http\Controllers\LaporanController;
-
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
@@ -9,8 +7,10 @@ use App\Http\Controllers\BandaraController;
 use App\Http\Controllers\PetugasController;
 use App\Http\Controllers\InspeksiController;
 use App\Http\Controllers\TemuanController;
-use App\Http\Controllers\FotoTemuanController;
 use App\Http\Controllers\TindakLanjutController;
+use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\FotoTemuanController;
+use App\Http\Controllers\GlobalSearchController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -22,12 +22,33 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 
 Route::middleware('auth')->group(function () {
 
+    Route::get('/search', GlobalSearchController::class)
+        ->name('search');
+
+    Route::get(
+        '/fototemuan/create',
+        [FotoTemuanController::class, 'create']
+    )->name('fototemuan.create');
+
+    Route::post(
+        '/fototemuan',
+        [FotoTemuanController::class, 'store']
+    )->name('fototemuan.store');
+
+    Route::delete(
+        '/fototemuan/{fotoTemuan}',
+        [FotoTemuanController::class, 'destroy']
+    )->name('fototemuan.destroy');
+
     Route::resource('bandara', BandaraController::class);
-
     Route::resource('petugas', PetugasController::class);
-
     Route::resource('inspeksi', InspeksiController::class);
     Route::resource('temuan', TemuanController::class);
+
+    Route::get(
+        '/laporan/temuan-by-bandara/{bandara}',
+        [LaporanController::class, 'temuanByBandara']
+    )->name('laporan.temuan-by-bandara');
 
     Route::resource('laporan', LaporanController::class);
 
@@ -42,35 +63,19 @@ Route::middleware('auth')->group(function () {
     )->name('tindaklanjut.store');
 
     Route::get(
-        '/tindaklanjut/{tindaklanjut}/edit',
+        '/tindaklanjut/{tindakLanjut}/edit',
         [TindakLanjutController::class, 'edit']
     )->name('tindaklanjut.edit');
 
     Route::put(
-        '/tindaklanjut/{tindaklanjut}',
+        '/tindaklanjut/{tindakLanjut}',
         [TindakLanjutController::class, 'update']
     )->name('tindaklanjut.update');
 
     Route::delete(
-        '/tindaklanjut/{tindaklanjut}',
+        '/tindaklanjut/{tindakLanjut}',
         [TindakLanjutController::class, 'destroy']
     )->name('tindaklanjut.destroy');
-
-
-    Route::get(
-        '/fototemuan/create',
-        [FotoTemuanController::class, 'create']
-    )->name('fototemuan.create');
-
-    Route::post(
-        '/fototemuan',
-        [FotoTemuanController::class, 'store']
-    )->name('fototemuan.store');
-
-    Route::delete(
-        '/fototemuan/{fototemuan}',
-        [FotoTemuanController::class, 'destroy']
-    )->name('fototemuan.destroy');
 
     Route::get('/profile', [ProfileController::class, 'edit'])
         ->name('profile.edit');
