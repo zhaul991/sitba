@@ -1340,118 +1340,381 @@
     </div>
 
 
+    {{-- Operational Heatmap Bandara --}}
+    @php
+        $heatmapBandara = \Illuminate\Support\Facades\DB::table('bandaras')
+            ->leftJoin(
+                'inspeksis',
+                'bandaras.id',
+                '=',
+                'inspeksis.bandara_id'
+            )
+            ->leftJoin(
+                'temuans',
+                'inspeksis.id',
+                '=',
+                'temuans.inspeksi_id'
+            )
+            ->select(
+                'bandaras.id',
+                'bandaras.nama_bandara'
+            )
+            ->selectRaw(
+                'COUNT(temuans.id) as total_temuan'
+            )
+            ->selectRaw(
+                "SUM(CASE WHEN temuans.status = 'Open' THEN 1 ELSE 0 END) as total_open"
+            )
+            ->selectRaw(
+                "SUM(CASE WHEN temuans.status = 'Close' THEN 1 ELSE 0 END) as total_close"
+            )
+            ->selectRaw(
+                "SUM(CASE WHEN temuans.tingkat_risiko = 'Tinggi' THEN 1 ELSE 0 END) as risiko_tinggi"
+            )
+            ->groupBy(
+                'bandaras.id',
+                'bandaras.nama_bandara'
+            )
+            ->orderByDesc('total_temuan')
+            ->limit(8)
+            ->get();
 
-    {{-- Top 5 Bandara dengan Temuan Terbanyak --}}
+        $heatmapNilaiMaksimum = max(
+            1,
+            (int) ($heatmapBandara->max('total_temuan') ?? 1)
+        );
+    @endphp
+
     <div
         class="overflow-hidden rounded-3xl border border-slate-200
                bg-white shadow-sm"
     >
-
         <div
-            class="border-b border-slate-100 px-6 py-5"
+            class="flex flex-col gap-4 border-b border-slate-100
+                   px-6 py-5 lg:flex-row lg:items-center
+                   lg:justify-between"
         >
-            <p
-                class="text-xs font-black uppercase
-                       tracking-[0.16em] text-indigo-600"
-            >
-                Monitoring Prioritas
-            </p>
+            <div>
+                <p
+                    class="text-xs font-black uppercase
+                           tracking-[0.16em] text-indigo-600"
+                >
+                    Operational Heatmap
+                </p>
 
-            <h3 class="mt-1 text-xl font-black text-slate-900">
-                Top 5 Bandara dengan Temuan Terbanyak
-            </h3>
+                <h3 class="mt-1 text-xl font-black text-slate-900">
+                    Peta Kondisi Temuan per Bandara
+                </h3>
 
-            <p class="mt-1 text-sm text-slate-500">
-                Daftar bandara dengan jumlah temuan tertinggi
-                berdasarkan data inspeksi.
-            </p>
+                <p class="mt-1 text-sm text-slate-500">
+                    Perbandingan temuan Open, Close, dan risiko Tinggi
+                    pada bandara dengan aktivitas terbanyak.
+                </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3 text-xs font-bold">
+                <span class="inline-flex items-center gap-2 text-amber-700">
+                    <span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span>
+                    Open
+                </span>
+
+                <span class="inline-flex items-center gap-2 text-emerald-700">
+                    <span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+                    Close
+                </span>
+
+                <span class="inline-flex items-center gap-2 text-red-700">
+                    <span class="h-2.5 w-2.5 rounded-full bg-red-500"></span>
+                    Risiko Tinggi
+                </span>
+            </div>
         </div>
 
+        @if ($heatmapBandara->isNotEmpty())
 
-        <div class="divide-y divide-slate-100">
+            <div class="overflow-x-auto">
 
-            @forelse ($bandaraTerbanyak as $index => $bandara)
+                <table class="w-full min-w-[860px]">
+
+                    <thead>
+                        <tr
+                            class="border-b border-slate-100
+                                   bg-slate-50/70 text-left"
+                        >
+                            <th
+                                class="w-[38%] px-6 py-4 text-xs font-black
+                                       uppercase tracking-wider text-slate-500"
+                            >
+                                Bandara
+                            </th>
+
+                            <th
+                                class="w-[9%] px-3 py-4 text-center text-xs
+                                       font-black uppercase tracking-wider
+                                       text-slate-500"
+                            >
+                                Total
+                            </th>
+
+                            <th
+                                class="w-[9%] px-3 py-4 text-center text-xs
+                                       font-black uppercase tracking-wider
+                                       text-slate-500"
+                            >
+                                Open
+                            </th>
+
+                            <th
+                                class="w-[9%] px-3 py-4 text-center text-xs
+                                       font-black uppercase tracking-wider
+                                       text-slate-500"
+                            >
+                                Close
+                            </th>
+
+                            <th
+                                class="w-[30%] min-w-[260px] px-4 py-4 text-xs
+                                       font-black uppercase tracking-wider
+                                       text-slate-500"
+                            >
+                                Intensitas Temuan
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-slate-100">
+
+                        @foreach ($heatmapBandara as $bandaraHeatmap)
+
+                            @php
+                                $jumlahTotal = (int) $bandaraHeatmap->total_temuan;
+                                $jumlahOpen = (int) $bandaraHeatmap->total_open;
+                                $jumlahClose = (int) $bandaraHeatmap->total_close;
+                                $jumlahTinggi = (int) $bandaraHeatmap->risiko_tinggi;
+
+                                $persenTotal = round(
+                                    ($jumlahTotal / $heatmapNilaiMaksimum) * 100
+                                );
+
+                                $persenOpen = $jumlahTotal > 0
+                                    ? round(($jumlahOpen / $jumlahTotal) * 100)
+                                    : 0;
+
+                                $persenClose = $jumlahTotal > 0
+                                    ? round(($jumlahClose / $jumlahTotal) * 100)
+                                    : 0;
+
+                                $persenTinggi = $jumlahTotal > 0
+                                    ? round(($jumlahTinggi / $jumlahTotal) * 100)
+                                    : 0;
+                            @endphp
+
+                            <tr
+                                class="group transition
+                                       hover:bg-blue-50/40"
+                            >
+                                <td class="px-6 py-5">
+                                    <a
+                                        href="{{ route('bandara.show', $bandaraHeatmap->id) }}"
+                                        class="font-bold text-slate-800
+                                               transition
+                                               group-hover:text-blue-700"
+                                    >
+                                        {{ $bandaraHeatmap->nama_bandara }}
+                                    </a>
+                                </td>
+
+                                <td class="px-3 py-5 text-center">
+                                    <span
+                                        class="inline-flex min-w-10
+                                               justify-center rounded-xl
+                                               bg-slate-100 px-3 py-2
+                                               text-sm font-black
+                                               text-slate-700"
+                                    >
+                                        {{ number_format($jumlahTotal) }}
+                                    </span>
+                                </td>
+
+                                <td class="px-4 py-5 text-center">
+                                    <span
+                                        class="inline-flex min-w-10
+                                               justify-center rounded-xl
+                                               bg-amber-50 px-3 py-2
+                                               text-sm font-black
+                                               text-amber-700"
+                                    >
+                                        {{ number_format($jumlahOpen) }}
+                                    </span>
+                                </td>
+
+                                <td class="px-4 py-5 text-center">
+                                    <span
+                                        class="inline-flex min-w-10
+                                               justify-center rounded-xl
+                                               bg-emerald-50 px-3 py-2
+                                               text-sm font-black
+                                               text-emerald-700"
+                                    >
+                                        {{ number_format($jumlahClose) }}
+                                    </span>
+                                </td>
+
+                                <td class="px-4 py-5 text-center">
+                                    <span
+                                        class="inline-flex min-w-10
+                                               justify-center rounded-xl
+                                               bg-red-50 px-3 py-2
+                                               text-sm font-black
+                                               text-red-700"
+                                    >
+                                        {{ number_format($jumlahTinggi) }}
+                                    </span>
+                                </td>
+
+                                <td class="px-4 py-5 align-middle">
+                                    <div class="w-full max-w-[320px] space-y-3">
+
+                                        <div>
+                                            <div
+                                                class="mb-1.5 flex items-center
+                                                       justify-between text-xs
+                                                       font-bold"
+                                            >
+                                                <span
+                                                    class="inline-flex
+                                                           items-center gap-2
+                                                           text-amber-700"
+                                                >
+                                                    <span
+                                                        class="h-2.5 w-2.5
+                                                               rounded-full
+                                                               bg-amber-400"
+                                                    ></span>
+
+                                                    Open
+                                                </span>
+
+                                                <span class="text-slate-600">
+                                                    {{ $persenOpen }}%
+                                                </span>
+                                            </div>
+
+                                            <div
+                                                class="h-2 overflow-hidden
+                                                       rounded-full bg-slate-100
+                                                       ring-1 ring-inset
+                                                       ring-slate-200"
+                                            >
+                                                <div
+                                                    class="h-full rounded-full
+                                                           bg-gradient-to-r
+                                                           from-amber-300
+                                                           to-amber-500
+                                                           transition-all
+                                                           duration-700"
+                                                    style="width: {{ $persenOpen }}%"
+                                                    title="Open {{ $persenOpen }}%"
+                                                ></div>
+                                            </div>
+
+                                            <p
+                                                class="mt-1 text-[11px]
+                                                       font-semibold
+                                                       text-slate-400"
+                                            >
+                                                {{ number_format($jumlahOpen) }}
+                                                temuan belum selesai
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <div
+                                                class="mb-1.5 flex items-center
+                                                       justify-between text-xs
+                                                       font-bold"
+                                            >
+                                                <span
+                                                    class="inline-flex
+                                                           items-center gap-2
+                                                           text-emerald-700"
+                                                >
+                                                    <span
+                                                        class="h-2.5 w-2.5
+                                                               rounded-full
+                                                               bg-emerald-500"
+                                                    ></span>
+
+                                                    Close
+                                                </span>
+
+                                                <span class="text-slate-600">
+                                                    {{ $persenClose }}%
+                                                </span>
+                                            </div>
+
+                                            <div
+                                                class="h-2 overflow-hidden
+                                                       rounded-full bg-slate-100
+                                                       ring-1 ring-inset
+                                                       ring-slate-200"
+                                            >
+                                                <div
+                                                    class="h-full rounded-full
+                                                           bg-gradient-to-r
+                                                           from-emerald-400
+                                                           to-emerald-600
+                                                           transition-all
+                                                           duration-700"
+                                                    style="width: {{ $persenClose }}%"
+                                                    title="Close {{ $persenClose }}%"
+                                                ></div>
+                                            </div>
+
+                                            <p
+                                                class="mt-1 text-[11px]
+                                                       font-semibold
+                                                       text-slate-400"
+                                            >
+                                                {{ number_format($jumlahClose) }}
+                                                temuan selesai
+                                            </p>
+                                        </div>
+
+                                    </div>
+                                </td>
+                            </tr>
+
+                        @endforeach
+
+                    </tbody>
+                </table>
+
+            </div>
+
+        @else
+
+            <div class="px-6 py-14 text-center">
 
                 <div
-                    class="flex flex-col gap-4 px-6 py-5
-                           transition hover:bg-slate-50
-                           sm:flex-row sm:items-center
-                           sm:justify-between"
+                    class="mx-auto flex h-14 w-14 items-center
+                           justify-center rounded-2xl bg-slate-100
+                           text-2xl"
                 >
-
-                    <div class="flex items-center gap-4">
-
-                        <div
-                            class="flex h-11 w-11 shrink-0
-                                   items-center justify-center
-                                   rounded-2xl bg-blue-50
-                                   text-lg font-black text-blue-700"
-                        >
-                            {{ $index + 1 }}
-                        </div>
-
-
-                        <div>
-
-                            <h4 class="font-black text-slate-900">
-                                {{ $bandara->nama_bandara }}
-                            </h4>
-
-                            <p class="mt-1 text-sm text-slate-500">
-                                Total temuan:
-                                <span class="font-bold text-slate-700">
-                                    {{ $bandara->jumlah_temuan }}
-                                </span>
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="flex gap-3">
-
-                        <div
-                            class="rounded-xl bg-amber-50
-                                   px-4 py-2 text-center"
-                        >
-                            <p class="text-xs font-bold text-amber-600">
-                                Open
-                            </p>
-
-                            <p class="text-lg font-black text-amber-700">
-                                {{ $bandara->jumlah_open }}
-                            </p>
-                        </div>
-
-
-                        <div
-                            class="rounded-xl bg-emerald-50
-                                   px-4 py-2 text-center"
-                        >
-                            <p class="text-xs font-bold text-emerald-600">
-                                Close
-                            </p>
-
-                            <p class="text-lg font-black text-emerald-700">
-                                {{ $bandara->jumlah_close }}
-                            </p>
-                        </div>
-
-                    </div>
-
+                    ◫
                 </div>
 
-            @empty
+                <p class="mt-4 font-bold text-slate-700">
+                    Data heatmap belum tersedia
+                </p>
 
-                <div class="px-6 py-14 text-center text-slate-500">
-                    Belum ada data temuan bandara.
-                </div>
+                <p class="mt-1 text-sm text-slate-500">
+                    Data akan muncul setelah temuan bandara ditambahkan.
+                </p>
 
-            @endforelse
+            </div>
 
-        </div>
-
+        @endif
     </div>
 
 

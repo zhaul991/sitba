@@ -264,11 +264,22 @@ class DashboardController extends Controller
             ])
             ->get()
             ->map(function (Bandara $bandara) {
-                $bandara->jumlah_temuan = $bandara->inspeksis
-                    ->sum(
+
+                $temuans = $bandara->inspeksis
+                    ->flatMap(
                         fn (Inspeksi $inspeksi) =>
-                            $inspeksi->temuans->count()
+                            $inspeksi->temuans
                     );
+
+                $bandara->jumlah_temuan = $temuans->count();
+
+                $bandara->jumlah_open = $temuans
+                    ->where('status', 'Open')
+                    ->count();
+
+                $bandara->jumlah_close = $temuans
+                    ->where('status', 'Close')
+                    ->count();
 
                 return $bandara;
             })
