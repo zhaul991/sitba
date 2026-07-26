@@ -51,6 +51,22 @@ Route::middleware('auth')->group(function () {
     Route::resource('temuan', TemuanController::class);
 
     Route::get(
+        '/api/inspeksi/tahun/{bandara}',
+        [TemuanController::class, 'getTahunInspeksi']
+    );
+
+    Route::get(
+        '/api/inspeksi/bulan/{bandara}/{tahun}',
+        [TemuanController::class, 'getBulanInspeksi']
+    );
+
+    Route::get(
+        '/api/inspeksi/list/{bandara}/{tahun}/{bulan}',
+        [TemuanController::class, 'getListInspeksi']
+    );
+
+
+    Route::get(
         '/laporan/temuan-by-bandara/{bandara}',
         [LaporanController::class, 'temuanByBandara']
     )->name('laporan.temuan-by-bandara');

@@ -147,14 +147,13 @@ class TemuanController extends Controller
 
     public function create(Request $request)
     {
-        $inspeksis = Inspeksi::with('bandara')
-            ->latest('tanggal')
+        $bandaras = Bandara::orderBy('nama_bandara')
             ->get();
 
         $inspeksiTerpilih = $request->inspeksi_id;
 
         return view('temuan.create', compact(
-            'inspeksis',
+            'bandaras',
             'inspeksiTerpilih'
         ));
     }
@@ -220,6 +219,48 @@ class TemuanController extends Controller
             ->route('inspeksi.show', $inspeksiId)
             ->with('success', 'Data temuan berhasil dihapus.');
     }
+
+
+
+    public function getTahunInspeksi($bandara)
+    {
+        return Inspeksi::where('bandara_id', $bandara)
+            ->whereNotNull('tanggal')
+            ->selectRaw('DISTINCT strftime("%Y", tanggal) as tahun')
+            ->orderByDesc('tahun')
+            ->pluck('tahun');
+    }
+
+
+    public function getBulanInspeksi($bandara, $tahun)
+    {
+        return Inspeksi::where('bandara_id', $bandara)
+            ->whereYear('tanggal', $tahun)
+            ->whereNotNull('tanggal')
+            ->selectRaw('DISTINCT strftime("%m", tanggal) as bulan')
+            ->orderBy('bulan')
+            ->pluck('bulan');
+    }
+
+
+    public function getListInspeksi($bandara, $tahun, $bulan)
+    {
+        return Inspeksi::with('bandara')
+            ->where('bandara_id', $bandara)
+            ->whereYear('tanggal', $tahun)
+            ->whereMonth('tanggal', $bulan)
+            ->orderBy('tanggal')
+            ->get()
+            ->map(function ($inspeksi) {
+
+                return [
+                    'id' => $inspeksi->id,
+                    'tanggal' => $inspeksi->tanggal->format('d-m-Y'),
+                ];
+
+            });
+    }
+
 
     private function validateTemuan(
         Request $request,

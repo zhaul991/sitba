@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignId('bandara_id')
                 ->constrained('bandaras')
                 ->cascadeOnUpdate()
-                ->restrictOnDelete();
+                ->cascadeOnDelete();
 
             $table->string('nomor_surat');
             $table->date('tanggal_surat');

@@ -395,17 +395,17 @@
             <div class="mb-3 flex items-center gap-3">
 
                 <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-700 font-bold text-white">
-                    {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                    {{ Auth::check() ? strtoupper(substr(Auth::user()->name, 0, 1)) : '?' }}
                 </div>
 
                 <div class="min-w-0">
 
                     <div class="truncate text-sm font-semibold">
-                        {{ Auth::user()->name }}
+                        {{ Auth::check() ? Auth::user()->name : 'Guest' }}
                     </div>
 
                     <div class="truncate text-xs text-slate-400">
-                        {{ Auth::user()->email }}
+                        {{ Auth::check() ? Auth::user()->email : 'Belum login' }}
                     </div>
 
                 </div>
@@ -533,7 +533,7 @@
                     <div class="text-right">
 
                         <div class="text-sm font-semibold text-slate-700">
-                            {{ Auth::user()->name }}
+                            {{ Auth::check() ? Auth::user()->name : 'Guest' }}
                         </div>
 
                         <div class="text-xs text-slate-500">
@@ -543,7 +543,7 @@
                     </div>
 
                     <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-700">
-                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                        {{ Auth::check() ? strtoupper(substr(Auth::user()->name, 0, 1)) : '?' }}
                     </div>
 
                 </div>

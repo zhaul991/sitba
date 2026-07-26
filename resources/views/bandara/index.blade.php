@@ -194,7 +194,7 @@
                                     <form
                                         action="{{ route('bandara.destroy', $bandara) }}"
                                         method="POST"
-                                        onsubmit="return confirm('Yakin ingin menghapus data bandara ini?')">
+                                        onsubmit="return confirm('⚠️ PERINGATAN PENGHAPUSAN DATA!\n\nData bandara ini akan dihapus beserta seluruh data inspeksi, temuan, foto dokumentasi, dan tindak lanjut yang terkait.\n\nTindakan ini tidak dapat dibatalkan.\n\nApakah Anda yakin ingin melanjutkan?')">
 
                                         @csrf
                                         @method('DELETE')

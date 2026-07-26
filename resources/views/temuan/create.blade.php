@@ -38,40 +38,91 @@
 
             <div class="space-y-6">
 
-                <div>
-                    <label for="inspeksi_id"
-                           class="mb-2 block text-sm font-semibold text-gray-700">
-                        Kegiatan Inspeksi
-                    </label>
+                <div class="space-y-6">
 
-                    <select
-                        id="inspeksi_id"
-                        name="inspeksi_id"
-                        class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        required
-                    >
-                        <option value="">
-                            Pilih kegiatan inspeksi
-                        </option>
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-gray-700">
+                            Bandara
+                        </label>
 
-                        @foreach ($inspeksis as $inspeksi)
-                            <option
-                                value="{{ $inspeksi->id }}"
-                                @selected(
-                                    old('inspeksi_id', $inspeksiTerpilih) == $inspeksi->id
-                                )
-                            >
-                                {{ $inspeksi->bandara?->nama_bandara ?? 'Bandara tidak tersedia' }}
-                                — {{ $inspeksi->tanggal?->format('d-m-Y') ?? '-' }}
+                        <select
+                            id="bandara_id"
+                            class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        >
+                            <option value="">
+                                Pilih bandara
                             </option>
-                        @endforeach
-                    </select>
 
-                    @error('inspeksi_id')
-                        <p class="mt-2 text-sm text-red-600">
-                            {{ $message }}
-                        </p>
-                    @enderror
+                            @foreach ($bandaras as $bandara)
+                                <option value="{{ $bandara->id }}">
+                                    {{ $bandara->nama_bandara }}
+                                </option>
+                            @endforeach
+
+                        </select>
+                    </div>
+
+
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-gray-700">
+                            Tahun Inspeksi
+                        </label>
+
+                        <select
+                            id="tahun"
+                            disabled
+                            class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        >
+                            <option value="">
+                                Pilih tahun
+                            </option>
+                        </select>
+                    </div>
+
+
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-gray-700">
+                            Bulan Inspeksi
+                        </label>
+
+                        <select
+                            id="bulan"
+                            disabled
+                            class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        >
+                            <option value="">
+                                Pilih bulan
+                            </option>
+                        </select>
+                    </div>
+
+
+                    <div>
+                        <label for="inspeksi_id"
+                               class="mb-2 block text-sm font-semibold text-gray-700">
+                            Kegiatan Inspeksi
+                        </label>
+
+                        <select
+                            id="inspeksi_id"
+                            name="inspeksi_id"
+                            disabled
+                            required
+                            class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        >
+                            <option value="">
+                                Pilih tanggal inspeksi
+                            </option>
+                        </select>
+
+                        @error('inspeksi_id')
+                            <p class="mt-2 text-sm text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
+
+                    </div>
+
                 </div>
 
                 <div class="grid gap-6 sm:grid-cols-2">
@@ -496,6 +547,132 @@
         });
 
         aturBagianPenutupan();
+
+        const bandaraSelect = document.getElementById('bandara_id');
+        const tahunSelect = document.getElementById('tahun');
+        const bulanSelect = document.getElementById('bulan');
+        const inspeksiSelect = document.getElementById('inspeksi_id');
+
+
+        function resetSelect(select, text) {
+            select.innerHTML = `<option value="">${text}</option>`;
+            select.disabled = true;
+        }
+
+
+        bandaraSelect.addEventListener('change', async function () {
+
+            resetSelect(tahunSelect, 'Pilih tahun');
+            resetSelect(bulanSelect, 'Pilih bulan');
+            resetSelect(inspeksiSelect, 'Pilih tanggal inspeksi');
+
+            if (!this.value) {
+                return;
+            }
+
+            const response = await fetch(
+                `/api/inspeksi/tahun/${this.value}`
+            );
+
+            const data = await response.json();
+
+            data.forEach(tahun => {
+
+                tahunSelect.innerHTML += `
+                    <option value="${tahun}">
+                        ${tahun}
+                    </option>
+                `;
+
+            });
+
+            tahunSelect.disabled = false;
+
+        });
+
+
+        tahunSelect.addEventListener('change', async function () {
+
+            resetSelect(bulanSelect, 'Pilih bulan');
+            resetSelect(inspeksiSelect, 'Pilih tanggal inspeksi');
+
+            if (!this.value) {
+                return;
+            }
+
+            const response = await fetch(
+                `/api/inspeksi/bulan/${bandaraSelect.value}/${this.value}`
+            );
+
+            const data = await response.json();
+
+
+            data.forEach(bulan => {
+
+                const namaBulan = [
+                    '',
+                    'Januari',
+                    'Februari',
+                    'Maret',
+                    'April',
+                    'Mei',
+                    'Juni',
+                    'Juli',
+                    'Agustus',
+                    'September',
+                    'Oktober',
+                    'November',
+                    'Desember'
+                ][parseInt(bulan)];
+
+
+                bulanSelect.innerHTML += `
+                    <option value="${bulan}">
+                        ${namaBulan}
+                    </option>
+                `;
+
+            });
+
+
+            bulanSelect.disabled = false;
+
+        });
+
+
+        bulanSelect.addEventListener('change', async function () {
+
+            resetSelect(inspeksiSelect, 'Pilih tanggal inspeksi');
+
+            if (!this.value) {
+                return;
+            }
+
+
+            const response = await fetch(
+                `/api/inspeksi/list/${bandaraSelect.value}/${tahunSelect.value}/${this.value}`
+            );
+
+
+            const data = await response.json();
+
+
+            data.forEach(inspeksi => {
+
+                inspeksiSelect.innerHTML += `
+                    <option value="${inspeksi.id}">
+                        ${inspeksi.tanggal}
+                    </option>
+                `;
+
+            });
+
+
+            inspeksiSelect.disabled = false;
+
+        });
+
+
     });
 </script>
 @endsection
