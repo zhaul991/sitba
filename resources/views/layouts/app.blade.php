@@ -356,6 +356,16 @@
             </a>
 
 
+            {{-- Riwayat Aktivitas --}}
+            <a
+                href="{{ route('aktivitas.index') }}"
+                class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold
+                       text-slate-700 transition hover:bg-slate-100"
+            >
+                <span>🕘</span>
+                <span>Riwayat Aktivitas</span>
+            </a>
+
             {{-- Laporan --}}
             <p class="mb-2 mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Penyelesaian

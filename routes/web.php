@@ -11,6 +11,7 @@ use App\Http\Controllers\TindakLanjutController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\FotoTemuanController;
 use App\Http\Controllers\GlobalSearchController;
+use App\Http\Controllers\ActivityLogController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -24,6 +25,10 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/search', GlobalSearchController::class)
         ->name('search');
+
+    Route::get('/aktivitas', [ActivityLogController::class, 'index'])
+        ->name('aktivitas.index');
+
 
     Route::get(
         '/fototemuan/create',
