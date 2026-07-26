@@ -3,15 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use Illuminate\Http\Request;
 
 class ActivityLogController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $activities = ActivityLog::latest()
-            ->with('user')
-            ->paginate(15);
+        $filter = $request->filter;
 
-        return view('aktivitas.index', compact('activities'));
+        $activities = ActivityLog::query()
+            ->with('user')
+            ->when($filter, function ($query) use ($filter) {
+                $query->where('action', $filter);
+            })
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('aktivitas.index', compact(
+            'activities',
+            'filter'
+        ));
     }
 }

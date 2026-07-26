@@ -25,6 +25,52 @@
     </div>
 
 
+    <div class="mb-6 flex flex-wrap gap-3">
+
+        <a
+            href="{{ route('aktivitas.index') }}"
+            class="rounded-xl px-4 py-2 text-sm font-semibold
+            {{ empty($filter)
+                ? 'bg-slate-900 text-white'
+                : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}"
+        >
+            Semua
+        </a>
+
+        <a
+            href="{{ route('aktivitas.index', ['filter' => 'create']) }}"
+            class="rounded-xl px-4 py-2 text-sm font-semibold
+            {{ ($filter ?? '') === 'create'
+                ? 'bg-emerald-600 text-white'
+                : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}"
+        >
+            Penambahan
+        </a>
+
+        <a
+            href="{{ route('aktivitas.index', ['filter' => 'update']) }}"
+            class="rounded-xl px-4 py-2 text-sm font-semibold
+            {{ ($filter ?? '') === 'update'
+                ? 'bg-blue-600 text-white'
+                : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}"
+        >
+            Perubahan
+        </a>
+
+        <a
+            href="{{ route('aktivitas.index', ['filter' => 'delete']) }}"
+            class="rounded-xl px-4 py-2 text-sm font-semibold
+            {{ ($filter ?? '') === 'delete'
+                ? 'bg-red-600 text-white'
+                : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}"
+        >
+            Penghapusan
+        </a>
+
+    </div>
+
+
+
     <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
 
         <div class="divide-y divide-slate-100">

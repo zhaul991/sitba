@@ -360,7 +360,10 @@
             <a
                 href="{{ route('aktivitas.index') }}"
                 class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold
-                       text-slate-700 transition hover:bg-slate-100"
+                       transition
+                       {{ request()->routeIs('aktivitas.*')
+                            ? 'bg-blue-600 text-white shadow'
+                            : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
             >
                 <span>🕘</span>
                 <span>Riwayat Aktivitas</span>
