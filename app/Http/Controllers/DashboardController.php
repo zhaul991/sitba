@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ActivityLog;
 use App\Models\Bandara;
 use App\Models\Inspeksi;
 use App\Models\Laporan;
@@ -23,6 +22,28 @@ class DashboardController extends Controller
         $tahun = $request->filled('tahun')
             ? $request->integer('tahun')
             : null;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Kategori Status Dashboard
+        |--------------------------------------------------------------------------
+        |
+        | Status teknis tetap disimpan sesuai proses inspeksi/audit.
+        | Dashboard mengelompokkan menjadi:
+        | - Belum selesai : Open + Unsatisfactory
+        | - Selesai        : Close + Satisfactory
+        |
+        */
+        $statusBelumSelesai = [
+            'Open',
+            'Unsatisfactory',
+        ];
+
+        $statusSelesai = [
+            'Close',
+            'Satisfactory',
+        ];
 
         /*
         |--------------------------------------------------------------------------
@@ -103,12 +124,12 @@ class DashboardController extends Controller
 
         $temuanOpen = Temuan::query()
             ->tap($filterTemuan)
-            ->where('status', 'Open')
+            ->whereIn('status', $statusBelumSelesai)
             ->count();
 
         $temuanClose = Temuan::query()
             ->tap($filterTemuan)
-            ->where('status', 'Close')
+            ->whereIn('status', $statusSelesai)
             ->count();
 
         $persentaseSelesai = $jumlahTemuan > 0
@@ -202,12 +223,12 @@ class DashboardController extends Controller
         */
         $tindakLanjutOpen = Temuan::query()
             ->tap($filterTemuan)
-            ->where('status', 'Open')
+            ->whereIn('status', $statusBelumSelesai)
             ->count();
 
         $tindakLanjutClose = Temuan::query()
             ->tap($filterTemuan)
-            ->where('status', 'Close')
+            ->whereIn('status', $statusSelesai)
             ->count();
 
         $jumlahTindakLanjutAktif =
@@ -221,8 +242,8 @@ class DashboardController extends Controller
 
         $tindakLanjutOverdue = TindakLanjut::query()
             ->tap($filterTindakLanjut)
-            ->whereHas('temuan', function (Builder $query) {
-                $query->where('status', 'Open');
+            ->whereHas('temuan', function (Builder $query) use ($statusBelumSelesai) {
+                $query->whereIn('status', $statusBelumSelesai);
             })
             ->whereNotNull('deadline')
             ->whereDate('deadline', '<', now()->toDateString())
@@ -232,8 +253,8 @@ class DashboardController extends Controller
         $tindakLanjutMendesak = TindakLanjut::query()
             ->with('temuan.inspeksi.bandara')
             ->tap($filterTindakLanjut)
-            ->whereHas('temuan', function (Builder $query) {
-                $query->where('status', 'Open');
+            ->whereHas('temuan', function (Builder $query) use ($statusBelumSelesai) {
+                $query->whereIn('status', $statusBelumSelesai);
             })
             ->whereNotNull('deadline')
             ->where('status', '!=', 'Selesai')
@@ -263,7 +284,10 @@ class DashboardController extends Controller
                 },
             ])
             ->get()
-            ->map(function (Bandara $bandara) {
+            ->map(function (Bandara $bandara) use (
+                $statusBelumSelesai,
+                $statusSelesai
+            ) {
 
                 $temuans = $bandara->inspeksis
                     ->flatMap(
@@ -274,11 +298,11 @@ class DashboardController extends Controller
                 $bandara->jumlah_temuan = $temuans->count();
 
                 $bandara->jumlah_open = $temuans
-                    ->where('status', 'Open')
+                    ->whereIn('status', $statusBelumSelesai)
                     ->count();
 
                 $bandara->jumlah_close = $temuans
-                    ->where('status', 'Close')
+                    ->whereIn('status', $statusSelesai)
                     ->count();
 
                 return $bandara;
@@ -286,6 +310,62 @@ class DashboardController extends Controller
             ->sortByDesc('jumlah_temuan')
             ->take(5)
             ->values();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Executive Insight
+        |--------------------------------------------------------------------------
+        */
+
+        // Risiko tinggi yang belum Close
+        $executiveRisikoTinggi = Temuan::query()
+            ->tap($filterTemuan)
+            ->where('tingkat_risiko', 'Tinggi')
+            ->whereIn('status', $statusBelumSelesai)
+            ->count();
+
+
+        // Temuan Open / Unsatisfactory
+        $executiveOpenUnsatisfactory = Temuan::query()
+            ->tap($filterTemuan)
+            ->whereIn('status', $statusBelumSelesai)
+            ->count();
+
+
+        // Temuan overdue berdasarkan due_date
+        $totalOverdue = Temuan::query()
+            ->tap($filterTemuan)
+            ->whereNotNull('due_date')
+            ->whereDate('due_date', '<', now()->toDateString())
+            ->whereIn('status', $statusBelumSelesai)
+            ->count();
+
+
+        // Bandara dengan temuan aktif terbanyak
+        $bandaraAktifTerbanyak = Bandara::query()
+            ->with([
+                'inspeksis.temuans'
+            ])
+            ->get()
+            ->map(function (Bandara $bandara) use ($statusBelumSelesai) {
+
+                $temuanAktif = $bandara->inspeksis
+                    ->flatMap(
+                        fn (Inspeksi $inspeksi) =>
+                            $inspeksi->temuans
+                    )
+                    ->whereIn('status', $statusBelumSelesai);
+
+                $bandara->jumlah_temuan_aktif =
+                    $temuanAktif->count();
+
+                return $bandara;
+            })
+            ->sortByDesc('jumlah_temuan_aktif')
+            ->take(5)
+            ->values();
+
 
         /*
         |--------------------------------------------------------------------------
@@ -299,20 +379,75 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        $temuanPrioritas = Temuan::query()
+
+        /*
+        |--------------------------------------------------------------------------
+        | Top 5 Temuan Prioritas Dashboard
+        |--------------------------------------------------------------------------
+        |
+        | Urutan:
+        | 1. Overdue paling lama
+        | 2. Jatuh tempo hari ini
+        | 3. Due <= 7 hari
+        | 4. Risiko tinggi belum Close
+        |
+        */
+
+
+        $topTemuanPrioritas = Temuan::query()
             ->with('inspeksi.bandara')
             ->tap($filterTemuan)
-            ->where('status', 'Open')
-            ->where('tingkat_risiko', 'Tinggi')
-            ->latest()
+            ->whereIn('status', $statusBelumSelesai)
+            ->whereNotNull('due_date')
+            ->get()
+            ->map(function (Temuan $temuan) {
+
+                $today = now()->startOfDay();
+                $dueDate = \Carbon\Carbon::parse($temuan->due_date);
+
+                if ($dueDate->lt($today)) {
+
+                    $temuan->priority_score = 1;
+
+                } elseif ($dueDate->equalTo($today)) {
+
+                    $temuan->priority_score = 2;
+
+                } elseif ($dueDate->lte($today->copy()->addDays(7))) {
+
+                    $temuan->priority_score = 3;
+
+                } elseif ($temuan->tingkat_risiko === 'Tinggi') {
+
+                    $temuan->priority_score = 4;
+
+                } else {
+
+                    $temuan->priority_score = 5;
+
+                }
+
+                return $temuan;
+
+            })
+            ->sort(function ($a, $b) {
+
+                if ($a->priority_score === $b->priority_score) {
+
+                    if ($a->priority_score === 1) {
+                        return $a->due_date <=> $b->due_date;
+                    }
+
+                    return $a->due_date <=> $b->due_date;
+                }
+
+                return $a->priority_score <=> $b->priority_score;
+
+            })
             ->take(5)
-            ->get();
+            ->values();
 
 
-        $activities = ActivityLog::latest()
-            ->with('user')
-            ->take(5)
-            ->get();
 
 
         /*
@@ -350,7 +485,9 @@ class DashboardController extends Controller
             ->each(function (Temuan $temuan) use (
                 &$dataTemuanBulanan,
                 &$dataTemuanOpenBulanan,
-                &$dataTemuanCloseBulanan
+                &$dataTemuanCloseBulanan,
+                $statusBelumSelesai,
+                $statusSelesai
             ) {
                 if (! $temuan->inspeksi?->tanggal) {
                     return;
@@ -360,11 +497,11 @@ class DashboardController extends Controller
 
                 $dataTemuanBulanan[$indexBulan]++;
 
-                if ($temuan->status === 'Open') {
+                if (in_array($temuan->status, $statusBelumSelesai)) {
                     $dataTemuanOpenBulanan[$indexBulan]++;
                 }
 
-                if ($temuan->status === 'Close') {
+                if (in_array($temuan->status, $statusSelesai)) {
                     $dataTemuanCloseBulanan[$indexBulan]++;
                 }
             });
@@ -405,11 +542,11 @@ class DashboardController extends Controller
 
                 $indexGrafik = $temuan->inspeksi->tanggal->month - 1;
 
-                if ($temuan->status === 'Open') {
+                if (in_array($temuan->status, $statusBelumSelesai)) {
                     $dataTemuanOpenGrafik[$indexGrafik]++;
                 }
 
-                if ($temuan->status === 'Close') {
+                if (in_array($temuan->status, $statusSelesai)) {
                     $dataTemuanCloseGrafik[$indexGrafik]++;
                 }
             }
@@ -457,11 +594,11 @@ class DashboardController extends Controller
                     continue;
                 }
 
-                if ($temuan->status === 'Open') {
+                if (in_array($temuan->status, $statusBelumSelesai)) {
                     $dataTemuanOpenGrafik[$indexGrafik]++;
                 }
 
-                if ($temuan->status === 'Close') {
+                if (in_array($temuan->status, $statusSelesai)) {
                     $dataTemuanCloseGrafik[$indexGrafik]++;
                 }
             }
@@ -508,9 +645,12 @@ class DashboardController extends Controller
             'tindakLanjutOverdue',
             'tindakLanjutMendesak',
             'bandaraTerbanyak',
+            'executiveRisikoTinggi',
+            'executiveOpenUnsatisfactory',
+            'totalOverdue',
+            'bandaraAktifTerbanyak',
             'temuanTerbaru',
-            'temuanPrioritas',
-            'activities',
+            'topTemuanPrioritas',
             'daftarBandara',
             'daftarTahun',
             'bandaraId',

@@ -26,7 +26,7 @@
         @endif
 
         <form
-            action="{{ route('tindaklanjut.update', $tindaklanjut) }}"
+            action="{{ route('tindaklanjut.update', $tindakLanjut) }}"
             method="POST"
         >
             @csrf
@@ -44,7 +44,7 @@
                         rows="6"
                         class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         required
-                    >{{ old('rencana_perbaikan', $tindaklanjut->rencana_perbaikan) }}</textarea>
+                    >{{ old('rencana_perbaikan', $tindakLanjut->rencana_perbaikan) }}</textarea>
                 </div>
 
                 <div class="grid gap-6 sm:grid-cols-2">
@@ -57,7 +57,7 @@
                         <input
                             type="text"
                             name="pic"
-                            value="{{ old('pic', $tindaklanjut->pic) }}"
+                            value="{{ old('pic', $tindakLanjut->pic) }}"
                             class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                             required
                         >
@@ -71,7 +71,7 @@
                         <input
                             type="date"
                             name="deadline"
-                            value="{{ old('deadline', $tindaklanjut->deadline?->format('Y-m-d') ?? $tindaklanjut->deadline) }}"
+                            value="{{ old('deadline', $tindakLanjut->deadline?->format('Y-m-d') ?? $tindakLanjut->deadline) }}"
                             class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                             required
                         >
@@ -92,7 +92,7 @@
                         @foreach (['Open', 'Dalam Tindak Lanjut', 'Selesai'] as $status)
                             <option
                                 value="{{ $status }}"
-                                @selected(old('status', $tindaklanjut->status) === $status)
+                                @selected(old('status', $tindakLanjut->status) === $status)
                             >
                                 {{ $status }}
                             </option>
@@ -109,7 +109,7 @@
                         name="catatan"
                         rows="4"
                         class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    >{{ old('catatan', $tindaklanjut->catatan) }}</textarea>
+                    >{{ old('catatan', $tindakLanjut->catatan) }}</textarea>
                 </div>
 
             </div>
@@ -117,7 +117,7 @@
             <div class="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
 
                 <a
-                    href="{{ route('temuan.show', $tindaklanjut->temuan_id) }}"
+                    href="{{ route('temuan.show', $tindakLanjut->temuan_id) }}"
                     class="rounded-xl border border-gray-300 px-5 py-3 text-center text-sm font-semibold text-gray-600 transition hover:bg-gray-50"
                 >
                     Batal

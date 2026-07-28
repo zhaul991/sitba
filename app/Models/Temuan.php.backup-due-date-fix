@@ -1,0 +1,54 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+
+class Temuan extends Model
+{
+    protected $fillable = [
+        'inspeksi_id',
+        'nomor_temuan',
+        'uraian_temuan',
+        'unsur_elemen',
+        'tingkat_risiko',
+        'lokasi',
+        'status',
+        'tanggal_close',
+        'keterangan_penutupan',
+        'dokumen_penutupan',
+    ];
+
+    protected $casts = [
+        'tanggal_close' => 'date',
+    ];
+
+    public function inspeksi()
+    {
+        return $this->belongsTo(Inspeksi::class);
+    }
+
+    public function foto()
+    {
+        return $this->hasMany(FotoTemuan::class);
+    }
+
+    public function tindakLanjut()
+    {
+        return $this->hasMany(TindakLanjut::class);
+    }
+
+    public function laporans(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Laporan::class,
+            'laporan_temuan'
+        )
+            ->withPivot([
+                'menutup_temuan',
+                'catatan_verifikasi',
+            ])
+            ->withTimestamps();
+    }
+}

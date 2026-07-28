@@ -6,120 +6,102 @@
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h1 class="text-3xl font-bold text-gray-800">
-                Data Temuan
+                Database Temuan
             </h1>
 
             <p class="mt-2 text-gray-500">
-                Kelola seluruh temuan hasil inspeksi bandar udara.
+                Pusat pencarian seluruh temuan hasil kegiatan pengawasan bandar udara.
             </p>
         </div>
 
-        <a href="{{ route('temuan.create') }}"
-           class="inline-flex items-center justify-center rounded-xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700">
-            + Tambah Temuan
-        </a>
+        
     </div>
 
 
     {{-- Ringkasan Temuan --}}
-    <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
 
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="flex items-start justify-between">
-
-                <div>
-                    <p class="text-sm font-medium text-slate-500">
-                        Total Temuan
-                    </p>
-
-                    <p class="mt-3 text-3xl font-bold text-slate-800">
-                        {{ number_format($totalTemuan) }}
-                    </p>
-                </div>
-
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-2xl">
-                    📋
-                </div>
-
-            </div>
-
+            <p class="text-sm font-medium text-slate-500">Total Temuan</p>
+            <p class="mt-3 text-3xl font-bold text-slate-800">
+                {{ number_format($totalTemuan) }}
+            </p>
             <p class="mt-4 text-xs font-semibold text-blue-600">
                 Berdasarkan filter aktif
             </p>
         </div>
 
+        <div class="rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
+            <p class="text-sm font-medium text-red-600">Open</p>
+            <p class="mt-3 text-3xl font-bold text-red-700">
+                {{ number_format($totalOpen) }}
+            </p>
+            <p class="mt-4 text-xs font-semibold text-red-600">
+                Belum ditindaklanjuti
+            </p>
+        </div>
 
         <div class="rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
-            <div class="flex items-start justify-between">
-
-                <div>
-                    <p class="text-sm font-medium text-red-600">
-                        Temuan Open
-                    </p>
-
-                    <p class="mt-3 text-3xl font-bold text-red-700">
-                        {{ number_format($totalOpen) }}
-                    </p>
-                </div>
-
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-2xl">
-                    ⚠️
-                </div>
-
-            </div>
-
+            <p class="text-sm font-medium text-red-600">Unsatisfactory</p>
+            <p class="mt-3 text-3xl font-bold text-red-700">
+                {{ number_format($totalUnsatisfactory) }}
+            </p>
             <p class="mt-4 text-xs font-semibold text-red-600">
-                Belum ditutup
+                Tindak lanjut belum memadai
             </p>
         </div>
-
 
         <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
-            <div class="flex items-start justify-between">
-
-                <div>
-                    <p class="text-sm font-medium text-emerald-600">
-                        Temuan Close
-                    </p>
-
-                    <p class="mt-3 text-3xl font-bold text-emerald-700">
-                        {{ number_format($totalClose) }}
-                    </p>
-                </div>
-
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-2xl">
-                    ✓
-                </div>
-
-            </div>
-
+            <p class="text-sm font-medium text-emerald-600">Satisfactory</p>
+            <p class="mt-3 text-3xl font-bold text-emerald-700">
+                {{ number_format($totalSatisfactory) }}
+            </p>
             <p class="mt-4 text-xs font-semibold text-emerald-600">
-                Sudah ditutup
+                Tindak lanjut memadai
             </p>
         </div>
 
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
+            <p class="text-sm font-medium text-emerald-600">Close</p>
+            <p class="mt-3 text-3xl font-bold text-emerald-700">
+                {{ number_format($totalClose) }}
+            </p>
+            <p class="mt-4 text-xs font-semibold text-emerald-600">
+                Temuan telah ditutup
+            </p>
+        </div>
 
-        <div class="rounded-2xl border border-orange-200 bg-orange-50 p-5 shadow-sm">
-            <div class="flex items-start justify-between">
+    </div>
 
-                <div>
-                    <p class="text-sm font-medium text-orange-600">
-                        Risiko Tinggi
-                    </p>
+    <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 
-                    <p class="mt-3 text-3xl font-bold text-orange-700">
-                        {{ number_format($totalRisikoTinggi) }}
-                    </p>
-                </div>
+        <div class="rounded-2xl border border-green-200 bg-green-50 p-5 shadow-sm">
+            <p class="text-sm font-medium text-green-600">Risiko Rendah</p>
+            <p class="mt-3 text-3xl font-bold text-green-700">
+                {{ number_format($totalRisikoRendah) }}
+            </p>
+            <p class="mt-4 text-xs font-semibold text-green-600">
+                Prioritas normal
+            </p>
+        </div>
 
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-2xl">
-                    🔥
-                </div>
+        <div class="rounded-2xl border border-yellow-200 bg-yellow-50 p-5 shadow-sm">
+            <p class="text-sm font-medium text-yellow-700">Risiko Sedang</p>
+            <p class="mt-3 text-3xl font-bold text-yellow-800">
+                {{ number_format($totalRisikoSedang) }}
+            </p>
+            <p class="mt-4 text-xs font-semibold text-yellow-700">
+                Perlu pemantauan
+            </p>
+        </div>
 
-            </div>
-
-            <p class="mt-4 text-xs font-semibold text-orange-600">
-                Perlu perhatian
+        <div class="rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
+            <p class="text-sm font-medium text-red-600">Risiko Tinggi</p>
+            <p class="mt-3 text-3xl font-bold text-red-700">
+                {{ number_format($totalRisikoTinggi) }}
+            </p>
+            <p class="mt-4 text-xs font-semibold text-red-600">
+                Perlu perhatian segera
             </p>
         </div>
 
@@ -138,10 +120,10 @@
             <form
                 method="GET"
                 action="{{ route('temuan.index') }}"
-                class="grid gap-3 md:grid-cols-2 xl:grid-cols-6"
+                class="grid gap-4 md:grid-cols-2 xl:grid-cols-12"
             >
                 {{-- Keyword --}}
-                <div class="xl:col-span-2">
+                <div class="xl:col-span-3">
                     <label
                         for="keyword"
                         class="mb-1.5 block text-xs font-semibold
@@ -164,7 +146,7 @@
                 </div>
 
                 {{-- Bandara --}}
-                <div>
+                <div class="xl:col-span-3">
                     <label
                         for="bandara_id"
                         class="mb-1.5 block text-xs font-semibold
@@ -202,8 +184,40 @@
                     </select>
                 </div>
 
+                {{-- Jenis Pengawasan --}}
+                <div class="xl:col-span-2">
+                    <label
+                        for="jenis_pengawasan"
+                        class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500"
+                    >
+                        Jenis Pengawasan
+                    </label>
+
+                    <select
+                        id="jenis_pengawasan"
+                        name="jenis_pengawasan"
+                        class="w-full rounded-xl border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    >
+                        <option value="">Semua Jenis</option>
+
+                        @foreach ([
+                            'Inspeksi',
+                            'Pemantauan (Monitoring)',
+                            'Pengamatan',
+                            'Audit'
+                        ] as $jenis)
+                            <option
+                                value="{{ $jenis }}"
+                                @selected(request('jenis_pengawasan') === $jenis)
+                            >
+                                {{ $jenis }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
                 {{-- Tahun --}}
-                <div>
+                <div class="xl:col-span-2">
                     <label
                         for="tahun"
                         class="mb-1.5 block text-xs font-semibold
@@ -239,7 +253,7 @@
                 </div>
 
                 {{-- Risiko --}}
-                <div>
+                <div class="xl:col-span-2">
                     <label
                         for="tingkat_risiko"
                         class="mb-1.5 block text-xs font-semibold
@@ -256,32 +270,23 @@
                                focus:border-blue-500
                                focus:ring-blue-500"
                     >
-                        <option value="">
-                            Semua Risiko
-                        </option>
+                        
+                        <option value="">Semua Risiko</option>
 
-                        <option
-                            value="Rendah"
-                            @selected(
-                                request('tingkat_risiko') === 'Rendah'
-                            )
-                        >
-                            Rendah
-                        </option>
+                        @foreach (config('sitba.risiko') as $risiko)
+                            <option
+                                value="{{ $risiko }}"
+                                @selected(request('tingkat_risiko') === $risiko)
+                            >
+                                {{ $risiko }}
+                            </option>
+                        @endforeach
 
-                        <option
-                            value="Tinggi"
-                            @selected(
-                                request('tingkat_risiko') === 'Tinggi'
-                            )
-                        >
-                            Tinggi
-                        </option>
                     </select>
                 </div>
 
                 {{-- Status --}}
-                <div>
+                <div class="xl:col-span-2">
                     <label
                         for="status"
                         class="mb-1.5 block text-xs font-semibold
@@ -293,28 +298,23 @@
                     <select
                         id="status"
                         name="status"
-                        class="w-full rounded-xl border-gray-300
+                        class="w-full min-w-[170px] rounded-xl border-gray-300
                                text-sm shadow-sm
                                focus:border-blue-500
                                focus:ring-blue-500"
                     >
-                        <option value="">
-                            Semua Status
-                        </option>
+                        
+                        <option value="">Semua Status</option>
 
-                        <option
-                            value="Open"
-                            @selected(request('status') === 'Open')
-                        >
-                            Open
-                        </option>
+                        @foreach (config('sitba.status') as $status)
+                            <option
+                                value="{{ $status }}"
+                                @selected(request('status') === $status)
+                            >
+                                {{ $status }}
+                            </option>
+                        @endforeach
 
-                        <option
-                            value="Close"
-                            @selected(request('status') === 'Close')
-                        >
-                            Close
-                        </option>
                     </select>
                 </div>
 
@@ -385,6 +385,10 @@
                             Status
                         </th>
 
+                        <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                            Due Date
+                        </th>
+
                         <th class="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
                             Aksi
                         </th>
@@ -397,18 +401,52 @@
                         @php
                             $risikoClass = match ($temuan->tingkat_risiko) {
                                 'Rendah' => 'bg-green-50 text-green-700',
-                                'Tinggi' => 'bg-orange-50 text-orange-700',
+                                'Sedang' => 'bg-yellow-50 text-yellow-700',
+                                'Tinggi' => 'bg-red-50 text-red-700',
                                 default => 'bg-gray-100 text-gray-700',
                             };
 
                             $statusClass = match ($temuan->status) {
                                 'Open' => 'bg-red-50 text-red-700',
+                                'Unsatisfactory' => 'bg-red-50 text-red-700',
+                                'Satisfactory' => 'bg-green-50 text-green-700',
                                 'Close' => 'bg-green-50 text-green-700',
                                 default => 'bg-gray-100 text-gray-700',
                             };
+
+                            $deadlineLabel = 'Tanpa Due Date';
+                            $deadlineClass = 'bg-gray-100 text-gray-600';
+                            $rowClass = '';
+
+                            if ($temuan->status === 'Close') {
+                                $deadlineLabel = 'Selesai';
+                                $deadlineClass = 'bg-blue-50 text-blue-700';
+                            } elseif ($temuan->due_date) {
+                                $dueDate = \Carbon\Carbon::parse($temuan->due_date)->startOfDay();
+                                $today = now()->startOfDay();
+                                $selisihHari = $today->diffInDays($dueDate, false);
+
+                                if ($selisihHari < 0) {
+                                    $hariOverdue = abs($selisihHari);
+                                    $deadlineLabel = 'Overdue ' . $hariOverdue . ' hari';
+                                    $deadlineClass = 'bg-red-100 text-red-700';
+                                    $rowClass = 'bg-red-50/60';
+                                } elseif ($selisihHari === 0) {
+                                    $deadlineLabel = 'Jatuh Tempo Hari Ini';
+                                    $deadlineClass = 'bg-orange-100 text-orange-700';
+                                    $rowClass = 'bg-orange-50/60';
+                                } elseif ($selisihHari <= 7) {
+                                    $deadlineLabel = '⚠️ H-' . $selisihHari;
+                                    $deadlineClass = 'bg-yellow-100 text-yellow-700';
+                                    $rowClass = 'bg-yellow-50/60';
+                                } else {
+                                    $deadlineLabel = 'Aman';
+                                    $deadlineClass = 'bg-green-50 text-green-700';
+                                }
+                            }
                         @endphp
 
-                        <tr class="transition hover:bg-gray-50">
+                        <tr class="{{ $rowClass }} transition hover:bg-gray-50">
 
                             <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                                 {{ $temuans->firstItem() + $loop->index }}
@@ -456,6 +494,22 @@
                                 </span>
                             </td>
 
+                            <td class="whitespace-nowrap px-6 py-4">
+                                @if ($temuan->due_date)
+                                    <div class="font-semibold text-gray-800">
+                                        {{ \Carbon\Carbon::parse($temuan->due_date)->format('d-m-Y') }}
+                                    </div>
+                                @else
+                                    <div class="text-sm text-gray-400">
+                                        Belum ditentukan
+                                    </div>
+                                @endif
+
+                                <span class="mt-2 inline-flex rounded-lg px-3 py-1 text-xs font-semibold {{ $deadlineClass }}">
+                                    {{ $deadlineLabel }}
+                                </span>
+                            </td>
+
                             <td class="whitespace-nowrap px-6 py-4 text-right">
                                 <div class="flex justify-end gap-2">
 
@@ -492,7 +546,7 @@
                     @empty
 
                         <tr>
-                            <td colspan="7" class="px-6 py-16 text-center">
+                            <td colspan="8" class="px-6 py-16 text-center">
 
                                 <div class="text-4xl">
                                     📋

@@ -326,9 +326,9 @@
             </a>
 
 
-            {{-- Kegiatan --}}
+            {{-- KEGIATAN PENGAWASAN --}}
             <p class="mb-2 mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Kegiatan Inspeksi
+                Kegiatan Pengawasan
             </p>
 
             <a
@@ -339,9 +339,50 @@
                     ? 'bg-blue-600 text-white shadow'
                     : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
             >
-                <span>🔍</span>
+                <span>📋</span>
                 <span>Inspeksi</span>
             </a>
+
+            <a
+                href="{{ route('pemantauan.index') }}"
+                class="mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5
+                text-sm font-medium transition
+                {{ request()->routeIs('pemantauan.*')
+                    ? 'bg-blue-600 text-white shadow'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+            >
+                <span>👁️</span>
+                <span>Pemantauan</span>
+            </a>
+
+            <a
+                href="{{ route('pengamatan.index') }}"
+                class="mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5
+                text-sm font-medium transition
+                {{ request()->routeIs('pengamatan.*')
+                    ? 'bg-blue-600 text-white shadow'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+            >
+                <span>🔎</span>
+                <span>Pengamatan</span>
+            </a>
+
+            <a
+                href="{{ route('audit.index') }}"
+                class="mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5
+                text-sm font-medium transition
+                {{ request()->routeIs('audit.*')
+                    ? 'bg-blue-600 text-white shadow'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+            >
+                <span>📝</span>
+                <span>Audit</span>
+            </a>
+
+            {{-- HASIL PENGAWASAN --}}
+            <p class="mb-2 mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Hasil Pengawasan
+            </p>
 
             <a
                 href="{{ route('temuan.index') }}"
@@ -352,11 +393,63 @@
                     : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
             >
                 <span>⚠️</span>
-                <span>Data Temuan</span>
+                <span>Database Temuan</span>
             </a>
 
+            
+            <a
+                href="{{ route('hasil-pengawasan.pemantauan') }}"
+                class="mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5
+                text-sm font-medium transition
+                {{ request()->routeIs('hasil-pengawasan.pemantauan')
+                    ? 'bg-blue-600 text-white shadow'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+            >
+                <span>👁️</span>
+                <span>Hasil Pemantauan</span>
+            </a>
 
-            {{-- Riwayat Aktivitas --}}
+            <a
+                href="{{ route('hasil-pengawasan.pengamatan') }}"
+                class="mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5
+                text-sm font-medium transition
+                {{ request()->routeIs('hasil-pengawasan.pengamatan')
+                    ? 'bg-blue-600 text-white shadow'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+            >
+                <span>🔎</span>
+                <span>Hasil Pengamatan</span>
+            </a>
+
+            <a
+                href="{{ route('hasil-pengawasan.audit') }}"
+                class="mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5
+                text-sm font-medium transition
+                {{ request()->routeIs('hasil-pengawasan.audit')
+                    ? 'bg-blue-600 text-white shadow'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+            >
+                <span>📝</span>
+                <span>Hasil Audit</span>
+            </a>
+
+<a
+                href="{{ route('laporan.index') }}"
+                class="mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5
+                text-sm font-medium transition
+                {{ request()->routeIs('laporan.*') || request()->routeIs('tindaklanjut.*')
+                    ? 'bg-blue-600 text-white shadow'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+            >
+                <span>📄</span>
+                <span>Laporan Tindak Lanjut</span>
+            </a>
+
+            {{-- AKTIVITAS --}}
+            <p class="mb-2 mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Aktivitas
+            </p>
+
             <a
                 href="{{ route('aktivitas.index') }}"
                 class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold
@@ -369,24 +462,7 @@
                 <span>Riwayat Aktivitas</span>
             </a>
 
-            {{-- Laporan --}}
-            <p class="mb-2 mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Penyelesaian
-            </p>
-
-            <a
-                href="{{ route('laporan.index') }}"
-                class="mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5
-                text-sm font-medium transition
-                {{ request()->routeIs('laporan.*') || request()->routeIs('tindaklanjut.*')
-                    ? 'bg-blue-600 text-white shadow'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
-            >
-                <span>📄</span>
-                <span>Laporan Tindak Lanjut</span>
-            </a>
-
-        </nav>
+</nav>
 
 
         {{-- Profil pengguna --}}

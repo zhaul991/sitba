@@ -14,6 +14,7 @@ class Inspeksi extends Model
     protected $fillable = [
         'bandara_id',
         'tanggal',
+        'jenis_inspeksi',
         'keterangan',
     ];
 

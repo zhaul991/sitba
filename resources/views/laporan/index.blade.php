@@ -164,7 +164,7 @@
                         </th>
 
                         <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                            Tahun
+                            Status
                         </th>
 
                         <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
@@ -213,9 +213,17 @@
 
 
                             <td class="whitespace-nowrap px-6 py-4">
-                                <span class="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                                    {{ $laporan->tanggal_surat?->format('Y') ?? '-' }}
-                                </span>
+
+                                @if ($laporan->temuans_count > 0)
+                                    <span class="inline-flex rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                                        Close
+                                    </span>
+                                @else
+                                    <span class="inline-flex rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
+                                        Open
+                                    </span>
+                                @endif
+
                             </td>
 
 
@@ -236,27 +244,23 @@
 
                             <td class="whitespace-nowrap px-6 py-4 text-right">
 
-                                <div class="flex items-center justify-end gap-2">
-
-                                    <a href="{{ route('laporan.show', $laporan) }}"
-                                       class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100">
-                                        Lihat
-                                    </a>
+                                <div class="flex justify-end gap-2">
 
                                     <a href="{{ route('laporan.edit', $laporan) }}"
-                                       class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-100">
+                                       class="rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-xs font-semibold text-yellow-700 hover:bg-yellow-100">
                                         Edit
                                     </a>
 
-                                    <form method="POST"
-                                          action="{{ route('laporan.destroy', $laporan) }}"
+
+                                    <form action="{{ route('laporan.destroy', $laporan) }}"
+                                          method="POST"
                                           onsubmit="return confirm('Yakin ingin menghapus laporan ini?')">
 
                                         @csrf
                                         @method('DELETE')
 
                                         <button type="submit"
-                                                class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100">
+                                                class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100">
                                             Hapus
                                         </button>
 
@@ -266,11 +270,13 @@
 
                             </td>
 
+
                         </tr>
 
                     @empty
 
                         <tr>
+
                             <td colspan="7"
                                 class="px-6 py-14 text-center">
 
@@ -278,17 +284,34 @@
                                     Belum ada laporan tindak lanjut
                                 </p>
 
-                                <p class="mt-2 text-sm text-gray-500">
-                                    Tambahkan laporan atau ubah filter pencarian.
+                                <p class="mt-1 text-sm text-gray-500">
+                                    Tambahkan surat tindak lanjut untuk menampilkan arsip.
                                 </p>
 
-                                <a href="{{ route('laporan.create') }}"
-                                   class="mt-5 inline-flex rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">
-                                    + Tambah Laporan
-                                </a>
-
                             </td>
+
                         </tr>
+
+
+                                <td colspan="6"
+                                    class="px-6 py-14 text-center">
+
+                                    <p class="font-semibold text-gray-700">
+                                        Belum ada laporan tindak lanjut
+                                    </p>
+
+                                    <p class="mt-2 text-sm text-gray-500">
+                                        Tambahkan laporan atau ubah filter pencarian.
+                                    </p>
+
+                                    <a href="{{ route('laporan.create') }}"
+                                       class="mt-5 inline-flex rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">
+                                        + Tambah Laporan
+                                    </a>
+
+                                </td>
+
+                            </tr>
 
                     @endforelse
 
@@ -308,5 +331,7 @@
     </div>
 
 </div>
+
+
 
 @endsection

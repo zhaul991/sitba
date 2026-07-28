@@ -282,10 +282,79 @@
                             </p>
                         </div>
 
-                        <div
-                            id="temuan-list"
-                            class="hidden space-y-4"
-                        ></div>
+                        <div id="temuan-wrapper" class="hidden">
+                            <div class="mb-5 space-y-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                                <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+                                    <div class="md:col-span-1">
+                                        <label for="search-temuan" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                            Cari Temuan
+                                        </label>
+
+                                        <input
+                                            type="search"
+                                            id="search-temuan"
+                                            placeholder="Nomor, uraian, unsur, atau lokasi..."
+                                            class="block w-full rounded-lg border-gray-300 bg-white text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        >
+                                    </div>
+
+                                    <div>
+                                        <label for="filter-tahun-temuan" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                            Tahun Inspeksi
+                                        </label>
+
+                                        <select
+                                            id="filter-tahun-temuan"
+                                            class="block w-full rounded-lg border-gray-300 bg-white text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        >
+                                            <option value="">Semua Tahun</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label for="filter-risiko-temuan" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                            Tingkat Risiko
+                                        </label>
+
+                                        <select
+                                            id="filter-risiko-temuan"
+                                            class="block w-full rounded-lg border-gray-300 bg-white text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        >
+                                            <option value="">Semua Risiko</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-col gap-3 border-t border-gray-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                                    <label class="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold text-gray-700">
+                                        <input
+                                            type="checkbox"
+                                            id="check-all-temuan"
+                                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                        >
+                                        Pilih semua hasil yang tampil
+                                    </label>
+
+                                    <p id="ringkasan-pilihan" class="text-sm font-medium text-gray-600">
+                                        0 temuan dipilih
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div
+                                id="temuan-filter-empty"
+                                class="hidden rounded-lg border border-dashed border-gray-300 px-6 py-8 text-center"
+                            >
+                                <p class="text-sm font-medium text-gray-700">
+                                    Tidak ada temuan yang cocok dengan pencarian atau filter.
+                                </p>
+                            </div>
+
+                            <div
+                                id="temuan-list"
+                                class="space-y-4"
+                            ></div>
+                        </div>
 
                         @error('temuan_ids')
                             <p class="mt-4 text-sm text-red-600">{{ $message }}</p>
@@ -316,23 +385,40 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const bandaraSelect = document.getElementById('bandara_id');
+
             const initialContainer = document.getElementById('temuan-initial');
             const loadingContainer = document.getElementById('temuan-loading');
             const emptyContainer = document.getElementById('temuan-empty');
             const errorContainer = document.getElementById('temuan-error');
+
+            const wrapperContainer = document.getElementById('temuan-wrapper');
             const listContainer = document.getElementById('temuan-list');
+            const filterEmptyContainer = document.getElementById('temuan-filter-empty');
+
+            const searchInput = document.getElementById('search-temuan');
+            const tahunFilter = document.getElementById('filter-tahun-temuan');
+            const risikoFilter = document.getElementById('filter-risiko-temuan');
+            const checkAllTemuan = document.getElementById('check-all-temuan');
+
             const jumlahTemuan = document.getElementById('jumlah-temuan');
+            const ringkasanPilihan = document.getElementById('ringkasan-pilihan');
 
             const oldTemuanIds = @json(
-                collect(old('temuan_ids', []))->map(fn ($id) => (string) $id)->values()
+                collect(old('temuan_ids', []))
+                    ->map(fn ($id) => (string) $id)
+                    ->values()
             );
+
+            let semuaTemuan = [];
+            let temuanTampil = [];
+            const selectedIds = new Set(oldTemuanIds);
 
             function hideAllStates() {
                 initialContainer.classList.add('hidden');
                 loadingContainer.classList.add('hidden');
                 emptyContainer.classList.add('hidden');
                 errorContainer.classList.add('hidden');
-                listContainer.classList.add('hidden');
+                wrapperContainer.classList.add('hidden');
                 jumlahTemuan.classList.add('hidden');
             }
 
@@ -343,15 +429,21 @@
                 return div.innerHTML;
             }
 
-            function formatDate(value) {
+            function normalizeDate(value) {
                 if (!value) {
-                    return '-';
+                    return null;
                 }
 
-                const date = new Date(value);
+                const date = new Date(String(value).replace(' ', 'T'));
 
-                if (Number.isNaN(date.getTime())) {
-                    return value;
+                return Number.isNaN(date.getTime()) ? null : date;
+            }
+
+            function formatDate(value) {
+                const date = normalizeDate(value);
+
+                if (!date) {
+                    return value || '-';
                 }
 
                 return new Intl.DateTimeFormat('id-ID', {
@@ -361,16 +453,159 @@
                 }).format(date);
             }
 
+            function getYear(value) {
+                const date = normalizeDate(value);
+
+                return date ? String(date.getFullYear()) : '';
+            }
+
+            function getRiskBadgeClasses(risk) {
+                const normalizedRisk = String(risk || '').toLowerCase();
+
+                if (normalizedRisk.includes('tinggi')) {
+                    return 'bg-red-50 text-red-700 ring-red-200';
+                }
+
+                if (normalizedRisk.includes('sedang')) {
+                    return 'bg-yellow-50 text-yellow-700 ring-yellow-200';
+                }
+
+                if (normalizedRisk.includes('rendah')) {
+                    return 'bg-green-50 text-green-700 ring-green-200';
+                }
+
+                return 'bg-gray-100 text-gray-700 ring-gray-200';
+            }
+
+            function updateCardState(card, checkbox) {
+                const statusBadge = card.querySelector('[data-selected-badge]');
+
+                if (checkbox.checked) {
+                    card.classList.remove(
+                        'border-gray-200',
+                        'bg-white'
+                    );
+
+                    card.classList.add(
+                        'border-indigo-400',
+                        'bg-indigo-50',
+                        'ring-1',
+                        'ring-indigo-200'
+                    );
+
+                    statusBadge?.classList.remove('hidden');
+                } else {
+                    card.classList.remove(
+                        'border-indigo-400',
+                        'bg-indigo-50',
+                        'ring-1',
+                        'ring-indigo-200'
+                    );
+
+                    card.classList.add(
+                        'border-gray-200',
+                        'bg-white'
+                    );
+
+                    statusBadge?.classList.add('hidden');
+                }
+            }
+
+            function updateSelectionSummary() {
+                const selectedVisibleCount = temuanTampil.filter(function (temuan) {
+                    return selectedIds.has(String(temuan.id));
+                }).length;
+
+                const totalSelectedCount = selectedIds.size;
+                const visibleCount = temuanTampil.length;
+                const totalCount = semuaTemuan.length;
+
+                ringkasanPilihan.textContent =
+                    `${totalSelectedCount} temuan dipilih • ` +
+                    `${visibleCount} ditampilkan dari ${totalCount} Open`;
+
+                jumlahTemuan.textContent =
+                    totalSelectedCount > 0
+                        ? `${totalSelectedCount} temuan dipilih`
+                        : `${totalCount} temuan Open`;
+
+                jumlahTemuan.classList.remove('hidden');
+
+                checkAllTemuan.checked =
+                    visibleCount > 0 &&
+                    selectedVisibleCount === visibleCount;
+
+                checkAllTemuan.indeterminate =
+                    selectedVisibleCount > 0 &&
+                    selectedVisibleCount < visibleCount;
+
+                checkAllTemuan.disabled = visibleCount === 0;
+            }
+
+            function populateFilters(temuans) {
+                const years = [...new Set(
+                    temuans
+                        .map(function (temuan) {
+                            return getYear(temuan.tanggal_inspeksi);
+                        })
+                        .filter(Boolean)
+                )].sort(function (a, b) {
+                    return Number(b) - Number(a);
+                });
+
+                tahunFilter.innerHTML =
+                    '<option value="">Semua Tahun</option>';
+
+                years.forEach(function (year) {
+                    const option = document.createElement('option');
+                    option.value = year;
+                    option.textContent = year;
+                    tahunFilter.appendChild(option);
+                });
+
+                const risks = [...new Set(
+                    temuans
+                        .map(function (temuan) {
+                            return String(temuan.tingkat_risiko || '').trim();
+                        })
+                        .filter(Boolean)
+                )].sort(function (a, b) {
+                    return a.localeCompare(b, 'id');
+                });
+
+                risikoFilter.innerHTML =
+                    '<option value="">Semua Risiko</option>';
+
+                risks.forEach(function (risk) {
+                    const option = document.createElement('option');
+                    option.value = risk;
+                    option.textContent = risk;
+                    risikoFilter.appendChild(option);
+                });
+            }
+
             function renderTemuans(temuans) {
                 listContainer.innerHTML = '';
+                temuanTampil = temuans;
+
+                if (temuans.length === 0) {
+                    filterEmptyContainer.classList.remove('hidden');
+                    updateSelectionSummary();
+                    return;
+                }
+
+                filterEmptyContainer.classList.add('hidden');
 
                 temuans.forEach(function (temuan) {
-                    const isChecked = oldTemuanIds.includes(String(temuan.id));
+                    const temuanId = String(temuan.id);
+                    const isChecked = selectedIds.has(temuanId);
 
                     const item = document.createElement('label');
 
                     item.className =
-                        'block cursor-pointer rounded-xl border border-gray-200 p-5 transition hover:border-indigo-300 hover:bg-indigo-50/30';
+                        'block cursor-pointer rounded-xl border border-gray-200 bg-white p-5 transition hover:border-indigo-300 hover:bg-indigo-50/40';
+
+                    item.dataset.temuanCard = temuanId;
 
                     item.innerHTML = `
                         <div class="flex items-start gap-4">
@@ -379,26 +614,42 @@
                                 name="temuan_ids[]"
                                 value="${escapeHtml(temuan.id)}"
                                 ${isChecked ? 'checked' : ''}
-                                class="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                class="temuan-checkbox mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                             >
 
                             <div class="min-w-0 flex-1">
-                                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                     <div>
-                                        <p class="text-sm font-semibold text-gray-900">
-                                            ${escapeHtml(temuan.nomor_temuan || 'Temuan #' + temuan.id)}
-                                        </p>
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <p class="text-sm font-semibold text-gray-900">
+                                                ${escapeHtml(
+                                                    temuan.nomor_temuan ||
+                                                    'Temuan #' + temuan.id
+                                                )}
+                                            </p>
 
-                                        <p class="mt-1 text-sm leading-6 text-gray-700">
+                                            <span
+                                                data-selected-badge
+                                                class="${isChecked ? '' : 'hidden'} inline-flex rounded-full bg-indigo-600 px-2.5 py-1 text-xs font-semibold text-white"
+                                            >
+                                                Akan Ditutup
+                                            </span>
+                                        </div>
+
+                                        <p class="mt-2 text-sm leading-6 text-gray-700">
                                             ${escapeHtml(temuan.uraian_temuan)}
                                         </p>
                                     </div>
 
                                     ${
                                         temuan.tingkat_risiko
-                                            ? `<span class="inline-flex w-fit rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700">
-                                                ${escapeHtml(temuan.tingkat_risiko)}
-                                            </span>`
+                                            ? `
+                                                <span
+                                                    class="inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${getRiskBadgeClasses(temuan.tingkat_risiko)}"
+                                                >
+                                                    ${escapeHtml(temuan.tingkat_risiko)}
+                                                </span>
+                                            `
                                             : ''
                                     }
                                 </div>
@@ -421,7 +672,9 @@
                                     <div>
                                         <dt class="text-gray-500">Tanggal Inspeksi</dt>
                                         <dd class="mt-1 font-medium text-gray-800">
-                                            ${escapeHtml(formatDate(temuan.tanggal_inspeksi))}
+                                            ${escapeHtml(
+                                                formatDate(temuan.tanggal_inspeksi)
+                                            )}
                                         </dd>
                                     </div>
                                 </dl>
@@ -429,17 +682,78 @@
                         </div>
                     `;
 
+                    const checkbox = item.querySelector('.temuan-checkbox');
+
+                    updateCardState(item, checkbox);
+
+                    checkbox.addEventListener('change', function () {
+                        if (this.checked) {
+                            selectedIds.add(temuanId);
+                        } else {
+                            selectedIds.delete(temuanId);
+                        }
+
+                        updateCardState(item, this);
+                        updateSelectionSummary();
+                    });
+
                     listContainer.appendChild(item);
                 });
 
-                jumlahTemuan.textContent = `${temuans.length} temuan Open`;
-                jumlahTemuan.classList.remove('hidden');
-                listContainer.classList.remove('hidden');
+                updateSelectionSummary();
+            }
+
+            function applyFilters() {
+                const keyword = searchInput.value
+                    .trim()
+                    .toLowerCase();
+
+                const selectedYear = tahunFilter.value;
+                const selectedRisk = risikoFilter.value;
+
+                const filtered = semuaTemuan.filter(function (temuan) {
+                    const searchableText = [
+                        temuan.nomor_temuan,
+                        temuan.uraian_temuan,
+                        temuan.unsur_elemen,
+                        temuan.lokasi,
+                    ]
+                        .map(function (value) {
+                            return String(value || '').toLowerCase();
+                        })
+                        .join(' ');
+
+                    const matchesKeyword =
+                        !keyword ||
+                        searchableText.includes(keyword);
+
+                    const matchesYear =
+                        !selectedYear ||
+                        getYear(temuan.tanggal_inspeksi) === selectedYear;
+
+                    const matchesRisk =
+                        !selectedRisk ||
+                        String(temuan.tingkat_risiko || '') === selectedRisk;
+
+                    return matchesKeyword && matchesYear && matchesRisk;
+                });
+
+                renderTemuans(filtered);
+            }
+
+            function resetFilters() {
+                searchInput.value = '';
+                tahunFilter.value = '';
+                risikoFilter.value = '';
+                checkAllTemuan.checked = false;
+                checkAllTemuan.indeterminate = false;
             }
 
             async function loadTemuans(bandaraId) {
                 hideAllStates();
                 listContainer.innerHTML = '';
+                semuaTemuan = [];
+                temuanTampil = [];
 
                 if (!bandaraId) {
                     initialContainer.classList.remove('hidden');
@@ -449,29 +763,42 @@
                 loadingContainer.classList.remove('hidden');
 
                 try {
-                    const baseUrl = @json(url('/laporan/temuan-by-bandara'));
-                    const response = await fetch(`${baseUrl}/${bandaraId}`, {
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest',
-                        },
-                    });
+                    const baseUrl = @json(
+                        url('/laporan/temuan-by-bandara')
+                    );
+
+                    const response = await fetch(
+                        `${baseUrl}/${bandaraId}`,
+                        {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                        }
+                    );
 
                     if (!response.ok) {
-                        throw new Error('Gagal mengambil data temuan.');
+                        throw new Error(
+                            `Gagal mengambil data temuan. HTTP ${response.status}`
+                        );
                     }
 
                     const result = await response.json();
-                    const temuans = Array.isArray(result.data) ? result.data : [];
+
+                    semuaTemuan = Array.isArray(result.data)
+                        ? result.data
+                        : [];
 
                     hideAllStates();
 
-                    if (temuans.length === 0) {
+                    if (semuaTemuan.length === 0) {
                         emptyContainer.classList.remove('hidden');
                         return;
                     }
 
-                    renderTemuans(temuans);
+                    populateFilters(semuaTemuan);
+                    wrapperContainer.classList.remove('hidden');
+                    renderTemuans(semuaTemuan);
                 } catch (error) {
                     hideAllStates();
                     errorContainer.classList.remove('hidden');
@@ -479,7 +806,29 @@
                 }
             }
 
+            searchInput.addEventListener('input', applyFilters);
+            tahunFilter.addEventListener('change', applyFilters);
+            risikoFilter.addEventListener('change', applyFilters);
+
+            checkAllTemuan.addEventListener('change', function () {
+                const shouldCheck = this.checked;
+
+                temuanTampil.forEach(function (temuan) {
+                    const temuanId = String(temuan.id);
+
+                    if (shouldCheck) {
+                        selectedIds.add(temuanId);
+                    } else {
+                        selectedIds.delete(temuanId);
+                    }
+                });
+
+                renderTemuans(temuanTampil);
+            });
+
             bandaraSelect.addEventListener('change', function () {
+                selectedIds.clear();
+                resetFilters();
                 loadTemuans(this.value);
             });
 

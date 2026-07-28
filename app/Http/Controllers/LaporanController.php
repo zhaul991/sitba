@@ -16,13 +16,16 @@ class LaporanController extends Controller
     {
         $bandaras = Bandara::orderBy('nama_bandara')->get();
 
+
         $daftarTahun = Laporan::query()
             ->selectRaw('DISTINCT strftime("%Y", tanggal_surat) AS tahun')
             ->whereNotNull('tanggal_surat')
             ->orderByDesc('tahun')
             ->pluck('tahun');
 
+
         $laporans = Laporan::with('bandara')
+            ->withCount('temuans')
             ->when($request->filled('bandara_id'), function ($query) use ($request) {
                 $query->where('bandara_id', $request->bandara_id);
             })
@@ -39,6 +42,7 @@ class LaporanController extends Controller
             ->latest('tanggal_surat')
             ->paginate(10)
             ->withQueryString();
+
 
         return view('laporan.index', compact(
             'laporans',
@@ -222,8 +226,11 @@ class LaporanController extends Controller
             'perihal' => ['nullable', 'string', 'max:255'],
             'keterangan' => ['nullable', 'string'],
             'file_surat' => ['nullable', 'file', 'mimes:pdf', 'max:5120'],
-            'temuan_ids' => ['required', 'array', 'min:1'],
-            'temuan_ids.*' => ['required', 'distinct', 'exists:temuans,id'],
+            'temuan_ids' => ['nullable', 'array'],
+            'temuan_ids.*' => [
+                'distinct',
+                'exists:temuans,id',
+            ],
         ]);
 
         $laporan->load('temuans');
@@ -231,40 +238,56 @@ class LaporanController extends Controller
         $temuanIdsLama = $laporan->temuans
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
+            ->unique()
             ->values();
 
-        $temuanIdsBaru = collect($validated['temuan_ids'])
+        $temuanIdsBaru = collect($validated['temuan_ids'] ?? [])
             ->map(fn ($id) => (int) $id)
             ->unique()
             ->values();
 
-        $temuans = Temuan::with('inspeksi')
+        $temuansBaru = Temuan::with('inspeksi')
             ->whereIn('id', $temuanIdsBaru)
-            ->where(function ($query) use ($temuanIdsLama) {
-                $query->where('status', 'Open')
-                    ->orWhereIn('id', $temuanIdsLama);
-            })
             ->get();
 
-        if ($temuans->count() !== $temuanIdsBaru->count()) {
+        if ($temuansBaru->count() !== $temuanIdsBaru->count()) {
             return back()
                 ->withInput()
                 ->withErrors([
                     'temuan_ids' =>
-                        'Terdapat temuan yang tidak valid atau telah ditutup oleh laporan lain.',
+                        'Terdapat temuan yang tidak valid.',
                 ]);
         }
 
-        $adaTemuanBandaraLain = $temuans->contains(function ($temuan) use ($validated) {
-            return (int) optional($temuan->inspeksi)->bandara_id
-                !== (int) $validated['bandara_id'];
-        });
+        $adaTemuanTidakTersedia = $temuansBaru->contains(
+            function ($temuan) use ($temuanIdsLama) {
+                return $temuan->status !== 'Open'
+                    && ! $temuanIdsLama->contains((int) $temuan->id);
+            }
+        );
+
+        if ($adaTemuanTidakTersedia) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'temuan_ids' =>
+                        'Terdapat temuan yang sudah ditutup oleh laporan lain.',
+                ]);
+        }
+
+        $adaTemuanBandaraLain = $temuansBaru->contains(
+            function ($temuan) use ($validated) {
+                return (int) optional($temuan->inspeksi)->bandara_id
+                    !== (int) $validated['bandara_id'];
+            }
+        );
 
         if ($adaTemuanBandaraLain) {
             return back()
                 ->withInput()
                 ->withErrors([
-                    'temuan_ids' => 'Semua temuan harus berasal dari bandara yang dipilih.',
+                    'temuan_ids' =>
+                        'Semua temuan harus berasal dari bandara yang dipilih.',
                 ]);
         }
 
@@ -272,24 +295,24 @@ class LaporanController extends Controller
             ->diff($temuanIdsBaru)
             ->values();
 
-        $fileLama = $laporan->file_surat;
-        $fileBaru = null;
+        $filePathBaru = null;
+        $filePathLama = $laporan->file_surat;
 
         if ($request->hasFile('file_surat')) {
-            $fileBaru = $request->file('file_surat')
+            $filePathBaru = $request
+                ->file('file_surat')
                 ->store('laporan', 'public');
         }
 
         try {
             DB::transaction(function () use (
-                $validated,
                 $laporan,
-                $temuans,
+                $validated,
                 $temuanIdsBaru,
                 $temuanIdsDilepas,
-                $fileBaru
+                $filePathBaru
             ) {
-                $data = [
+                $dataLaporan = [
                     'bandara_id' => $validated['bandara_id'],
                     'nomor_surat' => $validated['nomor_surat'],
                     'tanggal_surat' => $validated['tanggal_surat'],
@@ -297,11 +320,11 @@ class LaporanController extends Controller
                     'keterangan' => $validated['keterangan'] ?? null,
                 ];
 
-                if ($fileBaru) {
-                    $data['file_surat'] = $fileBaru;
+                if ($filePathBaru) {
+                    $dataLaporan['file_surat'] = $filePathBaru;
                 }
 
-                $laporan->update($data);
+                $laporan->update($dataLaporan);
 
                 $pivotData = [];
 
@@ -316,55 +339,60 @@ class LaporanController extends Controller
 
                 $laporan->temuans()->sync($pivotData);
 
-                foreach ($temuans as $temuan) {
-                    $temuan->update([
+                Temuan::whereIn('id', $temuanIdsBaru)
+                    ->update([
                         'status' => 'Close',
-                        'tanggal_close' => $validated['tanggal_surat'],
+                        'tanggal_close' =>
+                            $validated['tanggal_surat'],
                         'keterangan_penutupan' =>
                             'Ditutup berdasarkan surat tindak lanjut nomor '
                             . $validated['nomor_surat'],
                     ]);
-                }
 
                 foreach ($temuanIdsDilepas as $temuanId) {
-                    $masihDitutupLaporanLain = DB::table('laporan_temuan')
+                    $masihDitutupLaporanLain = DB::table(
+                        'laporan_temuan'
+                    )
                         ->where('temuan_id', $temuanId)
+                        ->where('laporan_id', '!=', $laporan->id)
                         ->where('menutup_temuan', true)
                         ->exists();
 
-                    if (!$masihDitutupLaporanLain) {
-                        Temuan::whereKey($temuanId)->update([
-                            'status' => 'Open',
-                            'tanggal_close' => null,
-                            'keterangan_penutupan' => null,
-                        ]);
+                    if (! $masihDitutupLaporanLain) {
+                        Temuan::whereKey($temuanId)
+                            ->update([
+                                'status' => 'Open',
+                                'tanggal_close' => null,
+                                'keterangan_penutupan' => null,
+                            ]);
                     }
                 }
             });
         } catch (Throwable $error) {
             if (
-                $fileBaru &&
-                Storage::disk('public')->exists($fileBaru)
+                $filePathBaru
+                && Storage::disk('public')->exists($filePathBaru)
             ) {
-                Storage::disk('public')->delete($fileBaru);
+                Storage::disk('public')->delete($filePathBaru);
             }
 
             throw $error;
         }
 
         if (
-            $fileBaru &&
-            $fileLama &&
-            Storage::disk('public')->exists($fileLama)
+            $filePathBaru
+            && $filePathLama
+            && $filePathLama !== $filePathBaru
+            && Storage::disk('public')->exists($filePathLama)
         ) {
-            Storage::disk('public')->delete($fileLama);
+            Storage::disk('public')->delete($filePathLama);
         }
 
         return redirect()
-            ->route('laporan.show', $laporan)
+            ->route('laporan.index')
             ->with(
                 'success',
-                'Laporan berhasil diperbarui dan status temuan telah disesuaikan.'
+                'Laporan berhasil diperbarui. Temuan yang dibatalkan telah dikembalikan menjadi Open.'
             );
     }
 

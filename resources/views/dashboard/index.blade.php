@@ -200,7 +200,7 @@
                         <div class="my-5 h-px bg-white/15"></div>
 
                         <p class="text-xs font-semibold uppercase tracking-wider text-blue-200">
-                            Waktu Indonesia Tengah
+                            📍 Makassar
                         </p>
 
                         <div class="mt-2 flex items-end justify-between gap-4">
@@ -523,7 +523,7 @@
 
     {{-- Executive Insight --}}
     @php
-        $bandaraInsight = $bandaraTerbanyak->first();
+        $bandaraInsight = $bandaraAktifTerbanyak->first();
     @endphp
 
     <div
@@ -587,15 +587,15 @@
                     </div>
 
                     <p class="mt-5 text-3xl font-black tabular-nums text-slate-900">
-                        {{ number_format($risikoTinggi) }}
+                        {{ number_format($executiveRisikoTinggi) }}
                     </p>
 
                     <p class="mt-1 text-sm font-bold text-slate-700">
-                        Temuan risiko tinggi
+                        Temuan Risiko Tinggi
                     </p>
 
                     <p class="mt-2 text-xs leading-5 text-slate-500">
-                        Memerlukan prioritas dalam proses pemantauan.
+                        Temuan risiko tinggi yang masih membutuhkan perhatian.
                     </p>
                 </a>
 
@@ -619,21 +619,21 @@
                     </div>
 
                     <p class="mt-5 text-3xl font-black tabular-nums text-slate-900">
-                        {{ number_format($temuanOpen) }}
+                        {{ number_format($executiveOpenUnsatisfactory) }}
                     </p>
 
                     <p class="mt-1 text-sm font-bold text-slate-700">
-                        Temuan masih Open
+                        Open / Unsatisfactory
                     </p>
 
                     <p class="mt-2 text-xs leading-5 text-slate-500">
-                        Belum selesai dan masih perlu ditindaklanjuti.
+                        Temuan yang masih memerlukan penyelesaian.
                     </p>
                 </a>
 
                 <div
                     class="rounded-2xl border
-                           {{ $tindakLanjutOverdue > 0
+                           {{ $totalOverdue > 0
                                 ? 'border-red-100 bg-red-50/40'
                                 : 'border-emerald-100 bg-emerald-50/40' }}
                            p-5 transition duration-300 hover:-translate-y-1
@@ -641,25 +641,25 @@
                 >
                     <div
                         class="flex h-11 w-11 items-center justify-center rounded-2xl
-                               {{ $tindakLanjutOverdue > 0
+                               {{ $totalOverdue > 0
                                     ? 'bg-red-100 text-red-700'
                                     : 'bg-emerald-100 text-emerald-700' }}"
                     >
-                        {{ $tindakLanjutOverdue > 0 ? '!' : '✓' }}
+                        {{ $totalOverdue > 0 ? '!' : '✓' }}
                     </div>
 
                     <p class="mt-5 text-3xl font-black tabular-nums text-slate-900">
-                        {{ number_format($tindakLanjutOverdue) }}
+                        {{ number_format($totalOverdue) }}
                     </p>
 
                     <p class="mt-1 text-sm font-bold text-slate-700">
-                        Tindak lanjut terlambat
+                        Total Temuan Overdue
                     </p>
 
                     <p class="mt-2 text-xs leading-5 text-slate-500">
-                        {{ $tindakLanjutOverdue > 0
-                            ? 'Perlu segera mendapat perhatian.'
-                            : 'Seluruh deadline masih dalam kondisi aman.' }}
+                        {{ $totalOverdue > 0
+                            ? 'Temuan melewati batas waktu penyelesaian.'
+                            : 'Tidak terdapat temuan overdue.' }}
                     </p>
                 </div>
 
@@ -679,12 +679,12 @@
                         </p>
 
                         <p class="mt-1 text-sm font-bold text-slate-700">
-                            Temuan terbanyak
+                            Temuan aktif terbanyak
                         </p>
 
                         <p class="mt-2 text-xs leading-5 text-slate-500">
                             {{ number_format($bandaraInsight->jumlah_temuan) }}
-                            temuan tercatat pada bandara ini.
+                            temuan aktif tercatat pada bandara ini.
                         </p>
 
                     @else
@@ -708,137 +708,6 @@
 
         </div>
     </div>
-
-
-    {{-- Filter --}}
-    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-
-        <form
-            method="GET"
-            action="{{ route('dashboard') }}"
-            class="grid gap-4 md:grid-cols-4 md:items-end"
-        >
-
-            <div class="md:col-span-2">
-
-                <label
-                    for="bandara_id"
-                    class="mb-2 block text-sm font-semibold text-slate-700"
-                >
-                    Bandara
-                </label>
-
-                <select
-                    id="bandara_id"
-                    name="bandara_id"
-                    class="w-full rounded-xl border-slate-300 text-sm shadow-sm
-                           focus:border-blue-500 focus:ring-blue-500"
-                >
-                    <option value="">Semua bandara</option>
-
-                    @foreach ($daftarBandara as $bandara)
-                        <option
-                            value="{{ $bandara->id }}"
-                            @selected((string) $bandaraId === (string) $bandara->id)
-                        >
-                            {{ $bandara->nama_bandara }}
-
-                            @if ($bandara->kode_bandara)
-                                — {{ $bandara->kode_bandara }}
-                            @endif
-                        </option>
-                    @endforeach
-                </select>
-
-            </div>
-
-            <div>
-
-                <label
-                    for="tahun"
-                    class="mb-2 block text-sm font-semibold text-slate-700"
-                >
-                    Tahun
-                </label>
-
-                <select
-                    id="tahun"
-                    name="tahun"
-                    class="w-full rounded-xl border-slate-300 text-sm shadow-sm
-                           focus:border-blue-500 focus:ring-blue-500"
-                >
-                    <option value="">Semua tahun</option>
-
-                    @foreach ($daftarTahun as $itemTahun)
-                        <option
-                            value="{{ $itemTahun }}"
-                            @selected((string) $tahun === (string) $itemTahun)
-                        >
-                            {{ $itemTahun }}
-                        </option>
-                    @endforeach
-                </select>
-
-            </div>
-
-            <div class="flex gap-2">
-
-                <button
-                    type="submit"
-                    class="flex-1 rounded-xl bg-blue-600 px-4 py-2.5
-                           text-sm font-semibold text-white transition
-                           hover:bg-blue-700"
-                >
-                    Terapkan
-                </button>
-
-                @if ($bandaraId || $tahun)
-
-                    <a
-                        href="{{ route('dashboard') }}"
-                        class="rounded-xl border border-slate-300 px-4 py-2.5
-                               text-sm font-semibold text-slate-600 transition
-                               hover:bg-slate-50"
-                    >
-                        Reset
-                    </a>
-
-                @endif
-
-            </div>
-
-        </form>
-
-        @if ($bandaraId || $tahun)
-
-            <div class="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
-
-                <span class="text-sm text-slate-500">
-                    Filter aktif:
-                </span>
-
-                @if ($bandaraTerpilih)
-
-                    <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                        {{ $bandaraTerpilih->nama_bandara }}
-                    </span>
-
-                @endif
-
-                @if ($tahun)
-
-                    <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                        Tahun {{ $tahun }}
-                    </span>
-
-                @endif
-
-            </div>
-
-        @endif
-
-    </div>
-
 
 
     {{-- Aksi Cepat --}}
@@ -940,7 +809,7 @@
 
                     <span>
                         <span class="block text-sm font-bold text-red-800">
-                            Temuan Open
+                            Temuan Belum Selesai
                         </span>
 
                         <span class="block text-xs text-red-600">
@@ -1341,14 +1210,124 @@
 
 
 
-    {{-- Top 5 Bandara dengan Temuan Terbanyak --}}
+
+
+    {{-- Top 5 Temuan Prioritas --}}
+    <div
+        class="overflow-hidden rounded-3xl border border-slate-200
+               bg-white shadow-sm"
+    >
+
+        <div class="border-b border-slate-100 px-6 py-5">
+
+            <p class="text-xs font-black uppercase tracking-[0.16em] text-red-600">
+                Monitoring Prioritas
+            </p>
+
+            <h3 class="mt-1 text-xl font-black text-slate-900">
+                Top 5 Temuan Prioritas
+            </h3>
+
+            <p class="mt-1 text-sm text-slate-500">
+                Temuan yang membutuhkan perhatian dan penyelesaian segera.
+            </p>
+
+        </div>
+
+
+        <div class="divide-y divide-slate-100">
+
+            @forelse ($topTemuanPrioritas as $index => $temuan)
+
+                <div class="px-6 py-5 transition hover:bg-slate-50">
+
+                    <div class="flex items-start gap-4">
+
+                        <div
+                            class="flex h-10 w-10 shrink-0 items-center
+                                   justify-center rounded-xl bg-red-50
+                                   font-black text-red-700"
+                        >
+                            {{ $index + 1 }}
+                        </div>
+
+                        <div class="flex-1">
+
+                            <h4 class="font-black text-slate-900">
+                                {{ $temuan->nomor_temuan }}
+                            </h4>
+
+                            <p class="mt-1 text-sm text-slate-600">
+                                {{ $temuan->inspeksi?->bandara?->nama_bandara ?? '-' }}
+                            </p>
+
+                            <div class="mt-2 flex flex-wrap gap-2">
+
+                                <span class="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
+                                    {{ $temuan->tingkat_risiko }}
+                                </span>
+
+                                @php
+                                    $dueDate = \Carbon\Carbon::parse($temuan->due_date);
+                                    $today = now()->startOfDay();
+                                @endphp
+
+                                @if ($dueDate->lt($today))
+
+                                    <span class="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
+                                        ⚠️ Overdue {{ $dueDate->diffInDays($today) }} hari
+                                    </span>
+
+                                @elseif ($dueDate->equalTo($today))
+
+                                    <span class="rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-orange-700">
+                                        🚨 Jatuh tempo hari ini
+                                    </span>
+
+                                @elseif ($today->diffInDays($dueDate) <= 7)
+
+                                    <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">
+                                        ⚠️ Segera jatuh tempo {{ $today->diffInDays($dueDate) }} hari lagi
+                                    </span>
+
+                                @else
+
+                                    <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
+                                        Due date: {{ $dueDate->format('d M Y') }}
+                                    </span>
+
+                                @endif
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            @empty
+
+                <div class="px-6 py-10 text-center text-slate-500">
+                    Belum ada temuan prioritas.
+                </div>
+
+            @endforelse
+
+        </div>
+
+    </div>
+
+
+    {{-- Top 5 Bandara dengan Temuan Aktif Terbanyak --}}
     <div
         class="overflow-hidden rounded-3xl border border-slate-200
                bg-white shadow-sm"
     >
 
         <div
-            class="border-b border-slate-100 px-6 py-5"
+            class="flex items-start justify-between
+                   border-b border-slate-100 px-6 py-5"
         >
             <p
                 class="text-xs font-black uppercase
@@ -1358,19 +1337,28 @@
             </p>
 
             <h3 class="mt-1 text-xl font-black text-slate-900">
-                Top 5 Bandara dengan Temuan Terbanyak
+                Top 5 Bandara dengan Temuan Aktif Terbanyak
             </h3>
 
             <p class="mt-1 text-sm text-slate-500">
-                Daftar bandara dengan jumlah temuan tertinggi
-                berdasarkan data inspeksi.
+                Daftar bandara dengan jumlah temuan aktif terbanyak yang
+                masih membutuhkan perhatian.
             </p>
+
+            <a
+                href="{{ route('bandara.index') }}"
+                class="mt-2 shrink-0 text-sm font-bold text-indigo-600
+                       transition hover:text-indigo-800"
+            >
+                Lihat semua →
+            </a>
+
         </div>
 
 
         <div class="divide-y divide-slate-100">
 
-            @forelse ($bandaraTerbanyak as $index => $bandara)
+            @forelse ($bandaraAktifTerbanyak as $index => $bandara)
 
                 <div
                     class="flex flex-col gap-4 px-6 py-5
@@ -1398,9 +1386,9 @@
                             </h4>
 
                             <p class="mt-1 text-sm text-slate-500">
-                                Total temuan:
+                                Temuan aktif:
                                 <span class="font-bold text-slate-700">
-                                    {{ $bandara->jumlah_temuan }}
+                                    {{ $bandara->jumlah_temuan_aktif }}
                                 </span>
                             </p>
 
@@ -1409,36 +1397,7 @@
                     </div>
 
 
-                    <div class="flex gap-3">
 
-                        <div
-                            class="rounded-xl bg-amber-50
-                                   px-4 py-2 text-center"
-                        >
-                            <p class="text-xs font-bold text-amber-600">
-                                Open
-                            </p>
-
-                            <p class="text-lg font-black text-amber-700">
-                                {{ $bandara->jumlah_open }}
-                            </p>
-                        </div>
-
-
-                        <div
-                            class="rounded-xl bg-emerald-50
-                                   px-4 py-2 text-center"
-                        >
-                            <p class="text-xs font-bold text-emerald-600">
-                                Close
-                            </p>
-
-                            <p class="text-lg font-black text-emerald-700">
-                                {{ $bandara->jumlah_close }}
-                            </p>
-                        </div>
-
-                    </div>
 
                 </div>
 
@@ -1452,222 +1411,6 @@
 
         </div>
 
-    </div>
-
-
-    {{-- Activity Timeline --}}
-    @php
-        $aktivitasDashboard = ($activities ?? collect())
-            ->map(function ($log) {
-
-                return [
-                    'jenis' => strtolower($log->model),
-                    'judul' => ucfirst($log->action) . ' ' . strtolower($log->model),
-                    'deskripsi' => $log->description,
-                    'bandara' => '-',
-                    'status' => ucfirst($log->action),
-                    'waktu' => $log->created_at,
-                    'url' => '#',
-                ];
-
-            });
-    @endphp
-
-    <div
-        class="overflow-hidden rounded-3xl border border-slate-200
-               bg-white shadow-sm"
-    >
-        <div
-            class="flex flex-col gap-4 border-b border-slate-100
-                   px-6 py-5 sm:flex-row sm:items-center
-                   sm:justify-between"
-        >
-            <div>
-                <p
-                    class="text-xs font-black uppercase tracking-[0.16em]
-                           text-blue-600"
-                >
-                    Live Monitoring
-                </p>
-
-                <h3 class="mt-1 text-xl font-black text-slate-900">
-                    Aktivitas dan Pembaruan Terbaru
-                </h3>
-
-                <p class="mt-1 text-sm text-slate-500">
-                    Ringkasan perubahan data temuan dan tindak lanjut terkini.
-                </p>
-            </div>
-
-            <div
-                class="flex w-fit items-center gap-2 rounded-full
-                       bg-emerald-50 px-3 py-2 text-xs font-bold
-                       text-emerald-700"
-            >
-                <span class="relative flex h-2.5 w-2.5">
-                    <span
-                        class="absolute inline-flex h-full w-full
-                               animate-ping rounded-full bg-emerald-400
-                               opacity-75"
-                    ></span>
-
-                    <span
-                        class="relative inline-flex h-2.5 w-2.5
-                               rounded-full bg-emerald-500"
-                    ></span>
-                </span>
-
-                Data terkini
-            </div>
-        </div>
-
-        @if ($aktivitasDashboard->isNotEmpty())
-
-            <div class="relative px-6 py-2">
-
-                <div
-                    class="absolute bottom-8 left-[45px] top-8
-                           w-px bg-slate-200"
-                ></div>
-
-                <div class="divide-y divide-slate-100">
-
-                    @foreach ($aktivitasDashboard as $aktivitas)
-
-                        @php
-                            $isCreate = strtolower($aktivitas['status']) === 'create';
-                            $isUpdate = strtolower($aktivitas['status']) === 'update';
-                            $isDelete = strtolower($aktivitas['status']) === 'delete';
-                        @endphp
-
-                        <a
-                            href="{{ $aktivitas['url'] }}"
-                            class="group relative flex gap-5 py-5"
-                        >
-                            <div
-                                class="relative z-10 flex h-10 w-10 shrink-0
-                                       items-center justify-center rounded-2xl
-                                       border-4 border-white shadow-sm
-                                       {{ $isDelete
-                                            ? 'bg-red-100 text-red-700'
-                                            : ($isCreate
-                                                ? 'bg-emerald-100 text-emerald-700'
-                                                : ($isUpdate
-                                                    ? 'bg-blue-100 text-blue-700'
-                                                    : 'bg-slate-100 text-slate-700')) }}"
-                            >
-                                @if ($isDelete)
-                                    ×
-                                @elseif ($isCreate)
-                                    +
-                                @elseif ($isUpdate)
-                                    ↻
-                                @else
-                                    •
-                                @endif
-                            </div>
-
-                            <div class="min-w-0 flex-1">
-
-                                <div
-                                    class="flex flex-col gap-2 sm:flex-row
-                                           sm:items-start
-                                           sm:justify-between"
-                                >
-                                    <div class="min-w-0">
-
-                                        <div
-                                            class="flex flex-wrap
-                                                   items-center gap-2"
-                                        >
-                                            <p
-                                                class="font-bold text-slate-900
-                                                       transition
-                                                       group-hover:text-blue-700"
-                                            >
-                                                {{ $aktivitas['judul'] }}
-                                            </p>
-
-                                            <span
-                                                class="rounded-full px-2.5 py-1
-                                                       text-[11px] font-black
-                                                       uppercase tracking-wide
-                                                       {{ $isDelete
-                                                            ? 'bg-red-100 text-red-700'
-                                                            : ($isCreate
-                                                                ? 'bg-emerald-100 text-emerald-700'
-                                                                : ($isUpdate
-                                                                    ? 'bg-amber-100 text-amber-700'
-                                                                    : 'bg-blue-100 text-blue-700')) }}"
-                                            >
-                                                {{ $aktivitas['status'] }}
-                                            </span>
-                                        </div>
-
-                                        <p
-                                            class="mt-1 line-clamp-1
-                                                   text-sm text-slate-600"
-                                        >
-                                            {{ $aktivitas['deskripsi'] }}
-                                        </p>
-
-                                        <p class="mt-2 text-xs text-slate-400">
-                                            {{ $aktivitas['bandara'] }}
-                                        </p>
-                                    </div>
-
-                                    <div
-                                        class="flex shrink-0 items-center
-                                               gap-3 sm:pl-4"
-                                    >
-                                        <span
-                                            class="text-xs font-semibold
-                                                   text-slate-400"
-                                        >
-                                            {{ optional($aktivitas['waktu'])->diffForHumans() }}
-                                        </span>
-
-                                        <span
-                                            class="text-slate-300 transition
-                                                   group-hover:translate-x-1
-                                                   group-hover:text-blue-600"
-                                        >
-                                            →
-                                        </span>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </a>
-
-                    @endforeach
-
-                </div>
-
-            </div>
-
-        @else
-
-            <div class="px-6 py-14 text-center">
-
-                <div
-                    class="mx-auto flex h-14 w-14 items-center
-                           justify-center rounded-2xl bg-slate-100
-                           text-2xl"
-                >
-                    ◷
-                </div>
-
-                <p class="mt-4 font-bold text-slate-700">
-                    Belum ada aktivitas terbaru
-                </p>
-
-                <p class="mt-1 text-sm text-slate-500">
-                    Pembaruan akan muncul setelah data SITBA ditambahkan.
-                </p>
-            </div>
-
-        @endif
     </div>
 
 
@@ -1685,7 +1428,7 @@
                     </h3>
 
                     <p class="mt-1 text-sm text-slate-500">
-                        Temuan risiko tinggi yang masih Open.
+                        Temuan risiko tinggi yang belum Close.
                     </p>
                 </div>
 
@@ -1697,7 +1440,7 @@
 
             <div class="divide-y divide-slate-100">
 
-                @forelse ($temuanPrioritas as $temuan)
+                @forelse ($topTemuanPrioritas as $temuan)
 
                     <a
                         href="{{ route('temuan.show', $temuan) }}"
@@ -1751,7 +1494,7 @@
                         </p>
 
                         <p class="mt-1 text-sm text-slate-500">
-                            Tidak terdapat temuan risiko tinggi berstatus Open.
+                            Tidak terdapat temuan risiko tinggi yang belum Close.
                         </p>
 
                     </div>
@@ -1759,6 +1502,21 @@
                 @endforelse
 
             </div>
+
+            @if ($topTemuanPrioritas->count() > 0)
+
+                <div class="border-t border-slate-100 px-6 py-4">
+
+                    <a
+                        href="{{ route('temuan.index', ['tingkat_risiko' => 'Tinggi']) }}"
+                        class="text-sm font-bold text-blue-600 transition hover:text-blue-800"
+                    >
+                        Lihat semua temuan prioritas →
+                    </a>
+
+                </div>
+
+            @endif
 
         </div>
 
@@ -1806,19 +1564,13 @@
                                         {{ $temuan->nomor_temuan }}
                                     </span>
 
-                                    @if ($temuan->status === 'Close')
-
-                                        <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                                            Close
-                                        </span>
-
-                                    @else
-
-                                        <span class="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700">
-                                            Open
-                                        </span>
-
-                                    @endif
+                                    <span
+                                        class="rounded-full px-2.5 py-1 text-xs font-semibold
+                                        {{ $temuan->status === 'Close'
+                                            ? 'bg-emerald-100 text-emerald-700'
+                                            : 'bg-red-100 text-red-700' }}">
+                                        {{ $temuan->status }}
+                                    </span>
 
                                 </div>
 

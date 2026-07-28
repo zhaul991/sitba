@@ -1,0 +1,116 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\BandaraController;
+use App\Http\Controllers\PetugasController;
+use App\Http\Controllers\InspeksiController;
+use App\Http\Controllers\TemuanController;
+use App\Http\Controllers\TindakLanjutController;
+use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\FotoTemuanController;
+use App\Http\Controllers\GlobalSearchController;
+use App\Http\Controllers\ActivityLogController;
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
+
+Route::middleware('auth')->group(function () {
+
+    Route::get('/search', GlobalSearchController::class)
+        ->name('search');
+
+    Route::get('/aktivitas', [ActivityLogController::class, 'index'])
+        ->name('aktivitas.index');
+
+
+    Route::get(
+        '/fototemuan/create',
+        [FotoTemuanController::class, 'create']
+    )->name('fototemuan.create');
+
+    Route::post(
+        '/fototemuan',
+        [FotoTemuanController::class, 'store']
+    )->name('fototemuan.store');
+
+    Route::delete(
+        '/fototemuan/{fotoTemuan}',
+        [FotoTemuanController::class, 'destroy']
+    )->name('fototemuan.destroy');
+
+    Route::resource('bandara', BandaraController::class);
+    Route::resource('petugas', PetugasController::class);
+    Route::resource('inspeksi', InspeksiController::class);
+    Route::resource('temuan', TemuanController::class);
+
+    Route::post(
+        '/temuan/{temuan}/close',
+        [TemuanController::class, 'close']
+    )->name('temuan.close');
+
+    Route::get(
+        '/api/inspeksi/tahun/{bandara}',
+        [TemuanController::class, 'getTahunInspeksi']
+    );
+
+    Route::get(
+        '/api/inspeksi/bulan/{bandara}/{tahun}',
+        [TemuanController::class, 'getBulanInspeksi']
+    );
+
+    Route::get(
+        '/api/inspeksi/list/{bandara}/{tahun}/{bulan}',
+        [TemuanController::class, 'getListInspeksi']
+    );
+
+
+    Route::get(
+        '/laporan/temuan-by-bandara/{bandara}',
+        [LaporanController::class, 'temuanByBandara']
+    )->name('laporan.temuan-by-bandara');
+
+    Route::resource('laporan', LaporanController::class);
+
+    Route::get(
+        '/tindaklanjut/create',
+        [TindakLanjutController::class, 'create']
+    )->name('tindaklanjut.create');
+
+    Route::post(
+        '/tindaklanjut',
+        [TindakLanjutController::class, 'store']
+    )->name('tindaklanjut.store');
+
+    Route::get(
+        '/tindaklanjut/{tindakLanjut}/edit',
+        [TindakLanjutController::class, 'edit']
+    )->name('tindaklanjut.edit');
+
+    Route::put(
+        '/tindaklanjut/{tindakLanjut}',
+        [TindakLanjutController::class, 'update']
+    )->name('tindaklanjut.update');
+
+    Route::delete(
+        '/tindaklanjut/{tindakLanjut}',
+        [TindakLanjutController::class, 'destroy']
+    )->name('tindaklanjut.destroy');
+
+    Route::get('/profile', [ProfileController::class, 'edit'])
+        ->name('profile.edit');
+
+    Route::patch('/profile', [ProfileController::class, 'update'])
+        ->name('profile.update');
+
+    Route::delete('/profile', [ProfileController::class, 'destroy'])
+        ->name('profile.destroy');
+});
+
+require __DIR__.'/auth.php';

@@ -13,13 +13,16 @@ class Temuan extends Model
         'uraian_temuan',
         'unsur_elemen',
         'tingkat_risiko',
+        'due_date',
         'lokasi',
         'status',
         'tanggal_close',
         'keterangan_penutupan',
+        'dokumen_penutupan',
     ];
 
     protected $casts = [
+        'due_date' => 'date',
         'tanggal_close' => 'date',
     ];
 

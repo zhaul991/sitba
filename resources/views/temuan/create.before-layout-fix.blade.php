@@ -1,0 +1,812 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="p-6 md:p-8">
+
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">
+            Tambah Temuan
+        </h1>
+
+        <p class="mt-2 text-gray-500">
+            Tambahkan temuan hasil kegiatan inspeksi bandar udara.
+        </p>
+    </div>
+
+    <div class="max-w-4xl rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+
+        @if ($errors->any())
+            <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-red-700">
+                <p class="font-semibold">
+                    Data temuan belum dapat disimpan.
+                </p>
+
+                <ul class="mt-2 list-inside list-disc text-sm">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <form
+            id="form-tambah-temuan"
+            action="{{ route('temuan.store') }}"
+            method="POST"
+        >
+            @csrf
+
+            <div class="space-y-6">
+
+                <div class="space-y-6">
+
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-gray-700">
+                            Bandara
+                        </label>
+
+                        <select
+                            id="bandara_id"
+                            class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        >
+                            <option value="">
+                                Pilih bandara
+                            </option>
+
+                            @foreach ($bandaras as $bandara)
+                                <option value="{{ $bandara->id }}">
+                                    {{ $bandara->nama_bandara }}
+                                </option>
+                            @endforeach
+
+                        </select>
+                    </div>
+
+
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-gray-700">
+                            Tahun Inspeksi
+                        </label>
+
+                        <select
+                            id="tahun"
+                            disabled
+                            class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        >
+                            <option value="">
+                                Pilih tahun
+                            </option>
+                        </select>
+                    </div>
+
+
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-gray-700">
+                            Bulan Inspeksi
+                        </label>
+
+                        <select
+                            id="bulan"
+                            disabled
+                            class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        >
+                            <option value="">
+                                Pilih bulan
+                            </option>
+                        </select>
+                    </div>
+
+
+                    <div>
+                        <label for="inspeksi_id"
+                               class="mb-2 block text-sm font-semibold text-gray-700">
+                            Kegiatan Inspeksi
+                        </label>
+
+                        <select
+                            id="inspeksi_id"
+                            name="inspeksi_id"
+                            disabled
+                            required
+                            class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        >
+                            <option value="">
+                                Pilih tanggal inspeksi
+                            </option>
+                        </select>
+
+                        @error('inspeksi_id')
+                            <p class="mt-2 text-sm text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
+
+                    </div>
+
+                </div>
+
+                <div class="grid gap-6 sm:grid-cols-2">
+
+                    <div>
+                        <label for="nomor_temuan"
+                               class="mb-2 block text-sm font-semibold text-gray-700">
+                            Nomor Temuan
+                        </label>
+
+                        <input
+                            type="text"
+                            id="nomor_temuan"
+                            name="nomor_temuan"
+                            value="{{ old('nomor_temuan') }}"
+                            placeholder="Contoh: TMN-001"
+                            class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            required
+                        >
+
+                        @error('nomor_temuan')
+                            <p class="mt-2 text-sm text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+
+                    <div>
+    
+                    <label
+                        for="kategori_unsur"
+                        class="mb-2 block text-sm font-semibold text-gray-700"
+                    >
+                        Kategori Unsur / Elemen
+                    </label>
+
+                    <select
+                        id="kategori_unsur"
+                        class="mb-4 w-full rounded-xl border-gray-300 shadow-sm
+                               focus:border-blue-500 focus:ring-blue-500"
+                    >
+                        <option value="">
+                            Pilih kategori unsur
+                        </option>
+
+                        @foreach ($unsurElemen as $kategori => $unsur)
+                            <option value="{{ $kategori }}">
+                                {{ $kategori }}
+                            </option>
+                        @endforeach
+
+                        <option value="Lainnya">
+                            Lainnya
+                        </option>
+                    </select>
+
+
+                    <label
+                        for="unsur_elemen"
+                        class="mb-2 block text-sm font-semibold text-gray-700"
+                    >
+                        Unsur / Elemen
+                    </label>
+
+                    <select
+                        id="unsur_elemen"
+                        name="unsur_elemen"
+                        class="w-full rounded-xl border-gray-300 shadow-sm
+                               focus:border-blue-500 focus:ring-blue-500"
+                        required
+                    >
+                        <option value="">
+                            Pilih unsur / elemen
+                        </option>
+                    </select>
+
+
+                    <div
+                        id="unsur-lainnya-wrapper"
+                        class="mt-4 hidden"
+                    >
+                        <label
+                            for="unsur_lainnya"
+                            class="mb-2 block text-sm font-semibold text-gray-700"
+                        >
+                            Keterangan Unsur / Elemen Lainnya
+                        </label>
+
+                        <textarea
+                            id="unsur_lainnya"
+                            rows="3"
+                            class="w-full rounded-xl border-gray-300 shadow-sm"
+                            placeholder="Masukkan unsur / elemen lainnya..."
+                        ></textarea>
+                    </div>
+
+
+                </div>
+
+                    <div>
+                        <label
+                            for="status"
+                            class="mb-2 block text-sm font-semibold text-gray-700"
+                        >
+                            Status Temuan
+                        </label>
+
+                        <select
+                            id="status"
+                            name="status"
+                            class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            required
+                        >
+                            <option value="">Pilih status</option>
+
+                            <option
+                                value="Open"
+                                @selected(old('status', 'Open') === 'Open')
+                            >
+                                Open
+                            </option>
+
+                            <option
+                                value="Close"
+                                @selected(old('status') === 'Close')
+                            >
+                                Close
+                            </option>
+                        </select>
+
+                        <p class="mt-2 text-xs text-gray-500">
+                            Status Close digunakan untuk temuan lama yang telah
+                            selesai dan seluruh dokumennya telah diverifikasi.
+                        </p>
+
+                        @error('status')
+                            <p class="mt-2 text-sm text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+
+                </div>
+
+                <div
+                    id="peringatan-penutupan"
+                    class="hidden rounded-xl border border-amber-200 bg-amber-50 px-5 py-4"
+                >
+                    <div class="flex items-start gap-3">
+                        <div class="text-xl">
+                            ⚠️
+                        </div>
+
+                        <div>
+                            <p class="font-bold text-amber-800">
+                                Perhatian sebelum menyimpan temuan Close
+                            </p>
+
+                            <p class="mt-2 text-sm leading-relaxed text-amber-700">
+                                Pastikan seluruh tindak lanjut telah selesai dan seluruh
+                                dokumen telah diverifikasi sebelum menyimpan temuan
+                                dengan status Close.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    id="bagian-penutupan"
+                    class="hidden rounded-2xl border border-green-200 bg-green-50 p-5"
+                >
+                    <div class="mb-5">
+                        <h2 class="text-lg font-bold text-green-900">
+                            Informasi Penutupan
+                        </h2>
+
+                        <p class="mt-1 text-sm text-green-700">
+                            Lengkapi informasi penutupan untuk temuan yang telah selesai.
+                        </p>
+                    </div>
+
+                    <div class="space-y-5">
+
+                        <div>
+                            <label
+                                for="tanggal_close"
+                                class="mb-2 block text-sm font-semibold text-green-900"
+                            >
+                                Tanggal Penutupan
+                            </label>
+
+                            <input
+                                type="date"
+                                id="tanggal_close"
+                                name="tanggal_close"
+                                value="{{ old('tanggal_close') }}"
+                                class="w-full rounded-xl border-green-300 bg-white shadow-sm focus:border-green-500 focus:ring-green-500"
+                            >
+
+                            @error('tanggal_close')
+                                <p class="mt-2 text-sm text-red-600">
+                                    {{ $message }}
+                                </p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label
+                                for="keterangan_penutupan"
+                                class="mb-2 block text-sm font-semibold text-green-900"
+                            >
+                                Keterangan Penutupan
+                            </label>
+
+                            <textarea
+                                id="keterangan_penutupan"
+                                name="keterangan_penutupan"
+                                rows="4"
+                                placeholder="Contoh: Seluruh dokumen telah diverifikasi."
+                                class="w-full rounded-xl border-green-300 bg-white shadow-sm focus:border-green-500 focus:ring-green-500"
+                            >{{ old('keterangan_penutupan') }}</textarea>
+
+                            <p class="mt-2 text-xs text-green-700">
+                                Jelaskan secara singkat dasar penutupan temuan.
+                            </p>
+
+                            @error('keterangan_penutupan')
+                                <p class="mt-2 text-sm text-red-600">
+                                    {{ $message }}
+                                </p>
+                            @enderror
+                        </div>
+
+                    </div>
+                </div>
+
+                <div>
+                    <label for="uraian_temuan"
+                           class="mb-2 block text-sm font-semibold text-gray-700">
+                        Uraian Temuan
+                    </label>
+
+                    <textarea
+                        id="uraian_temuan"
+                        name="uraian_temuan"
+                        rows="6"
+                        placeholder="Jelaskan kondisi temuan secara lengkap..."
+                        class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        required
+                    >{{ old('uraian_temuan') }}</textarea>
+
+                    @error('uraian_temuan')
+                        <p class="mt-2 text-sm text-red-600">
+                            {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="lokasi"
+                           class="mb-2 block text-sm font-semibold text-gray-700">
+                        Lokasi Temuan
+                    </label>
+
+                    <input
+                        type="text"
+                        id="lokasi"
+                        name="lokasi"
+                        value="{{ old('lokasi') }}"
+                        placeholder="Contoh: Runway 03, Apron sisi utara"
+                        class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        required
+                    >
+
+                    @error('lokasi')
+                        <p class="mt-2 text-sm text-red-600">
+                            {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+
+                <div class="grid gap-6 sm:grid-cols-2">
+
+                    <div>
+                        <label for="tingkat_risiko"
+                               class="mb-2 block text-sm font-semibold text-gray-700">
+                            Tingkat Risiko
+                        </label>
+
+                        <select
+                            id="tingkat_risiko"
+                            name="tingkat_risiko"
+                            class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            required
+                        >
+                            <option value="">Pilih tingkat risiko</option>
+                            <option value="Rendah" @selected(old('tingkat_risiko') === 'Rendah')>
+                                Rendah
+                            </option>
+                            <option value="Tinggi" @selected(old('tingkat_risiko') === 'Tinggi')>
+                                Tinggi
+                            </option>
+                        </select>
+
+                        @error('tingkat_risiko')
+                            <p class="mt-2 text-sm text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+
+                <a href="{{ url()->previous() }}"
+                   class="rounded-xl border border-gray-300 px-5 py-3 text-center text-sm font-semibold text-gray-600 transition hover:bg-gray-50">
+                    Batal
+                </a>
+
+                <button
+                    type="submit"
+                    class="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
+                    Simpan Temuan
+                </button>
+
+            </div>
+        </form>
+
+    </div>
+
+</div>
+
+<div
+    id="modal-konfirmasi-close"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-900/60 p-4"
+>
+    <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+
+        <div class="flex items-start gap-4">
+
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-100 text-2xl">
+                ⚠️
+            </div>
+
+            <div>
+                <h2 class="text-xl font-bold text-gray-900">
+                    Simpan Sebagai Close?
+                </h2>
+
+                <p class="mt-2 text-sm leading-relaxed text-gray-600">
+                    Temuan ini akan langsung disimpan dengan status
+                    <span class="font-bold text-gray-900">
+                        Close
+                    </span>.
+                </p>
+            </div>
+
+        </div>
+
+        <div class="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-4">
+
+            <p class="text-sm font-semibold text-gray-800">
+                Pastikan:
+            </p>
+
+            <div class="mt-3 space-y-2 text-sm text-gray-600">
+                <p>✓ Seluruh tindak lanjut telah selesai.</p>
+                <p>✓ Seluruh dokumen telah diverifikasi.</p>
+                <p>✓ Informasi penutupan telah diisi dengan benar.</p>
+            </div>
+
+        </div>
+
+        <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+
+            <button
+                type="button"
+                id="tombol-batal-close"
+                class="rounded-xl border border-gray-300 px-5 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+            >
+                Batal
+            </button>
+
+            <button
+                type="button"
+                id="tombol-konfirmasi-close"
+                class="rounded-xl bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-700"
+            >
+                Ya, Simpan Close
+            </button>
+
+        </div>
+
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('form-tambah-temuan');
+        const statusSelect = document.getElementById('status');
+
+        const bagianPenutupan = document.getElementById('bagian-penutupan');
+        const peringatanPenutupan = document.getElementById('peringatan-penutupan');
+
+        const tanggalClose = document.getElementById('tanggal_close');
+        const keteranganPenutupan = document.getElementById(
+            'keterangan_penutupan'
+        );
+
+        const modal = document.getElementById('modal-konfirmasi-close');
+        const tombolBatal = document.getElementById('tombol-batal-close');
+        const tombolKonfirmasi = document.getElementById(
+            'tombol-konfirmasi-close'
+        );
+
+        let sudahDikonfirmasi = false;
+
+        function aturBagianPenutupan() {
+            const statusClose = statusSelect.value === 'Close';
+
+            bagianPenutupan.classList.toggle('hidden', !statusClose);
+            peringatanPenutupan.classList.toggle('hidden', !statusClose);
+
+            tanggalClose.required = statusClose;
+            keteranganPenutupan.required = statusClose;
+        }
+
+        function bukaModal() {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function tutupModal() {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        statusSelect.addEventListener('change', aturBagianPenutupan);
+
+        form.addEventListener('submit', function (event) {
+            if (
+                statusSelect.value === 'Close' &&
+                !sudahDikonfirmasi
+            ) {
+                event.preventDefault();
+                bukaModal();
+            }
+        });
+
+        tombolBatal.addEventListener('click', tutupModal);
+
+        tombolKonfirmasi.addEventListener('click', function () {
+            sudahDikonfirmasi = true;
+            tutupModal();
+            form.requestSubmit();
+        });
+
+        modal.addEventListener('click', function (event) {
+            if (event.target === modal) {
+                tutupModal();
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                tutupModal();
+            }
+        });
+
+        aturBagianPenutupan();
+
+        const bandaraSelect = document.getElementById('bandara_id');
+        const tahunSelect = document.getElementById('tahun');
+        const bulanSelect = document.getElementById('bulan');
+        const inspeksiSelect = document.getElementById('inspeksi_id');
+
+
+        function resetSelect(select, text) {
+            select.innerHTML = `<option value="">${text}</option>`;
+            select.disabled = true;
+        }
+
+
+        bandaraSelect.addEventListener('change', async function () {
+
+            resetSelect(tahunSelect, 'Pilih tahun');
+            resetSelect(bulanSelect, 'Pilih bulan');
+            resetSelect(inspeksiSelect, 'Pilih tanggal inspeksi');
+
+            if (!this.value) {
+                return;
+            }
+
+            const response = await fetch(
+                `/api/inspeksi/tahun/${this.value}`
+            );
+
+            const data = await response.json();
+
+            data.forEach(tahun => {
+
+                tahunSelect.innerHTML += `
+                    <option value="${tahun}">
+                        ${tahun}
+                    </option>
+                `;
+
+            });
+
+            tahunSelect.disabled = false;
+
+        });
+
+
+        tahunSelect.addEventListener('change', async function () {
+
+            resetSelect(bulanSelect, 'Pilih bulan');
+            resetSelect(inspeksiSelect, 'Pilih tanggal inspeksi');
+
+            if (!this.value) {
+                return;
+            }
+
+            const response = await fetch(
+                `/api/inspeksi/bulan/${bandaraSelect.value}/${this.value}`
+            );
+
+            const data = await response.json();
+
+
+            data.forEach(bulan => {
+
+                const namaBulan = [
+                    '',
+                    'Januari',
+                    'Februari',
+                    'Maret',
+                    'April',
+                    'Mei',
+                    'Juni',
+                    'Juli',
+                    'Agustus',
+                    'September',
+                    'Oktober',
+                    'November',
+                    'Desember'
+                ][parseInt(bulan)];
+
+
+                bulanSelect.innerHTML += `
+                    <option value="${bulan}">
+                        ${namaBulan}
+                    </option>
+                `;
+
+            });
+
+
+            bulanSelect.disabled = false;
+
+        });
+
+
+        const kategoriUnsur = document.getElementById('kategori_unsur');
+        const unsurElemen = document.getElementById('unsur_elemen');
+        const unsurLainnyaWrapper = document.getElementById('unsur-lainnya-wrapper');
+        const unsurLainnya = document.getElementById('unsur_lainnya');
+
+
+        const dataUnsur = @json($unsurElemen);
+
+
+        function resetUnsur() {
+
+            unsurElemen.innerHTML = `
+                <option value="">
+                    Pilih unsur / elemen
+                </option>
+            `;
+
+            unsurElemen.disabled = true;
+
+        }
+
+
+        kategoriUnsur.addEventListener('change', function () {
+
+            resetUnsur();
+
+            unsurLainnyaWrapper.classList.add('hidden');
+
+
+            if (this.value === 'Lainnya') {
+
+                unsurLainnyaWrapper.classList.remove('hidden');
+
+                unsurElemen.disabled = true;
+
+                unsurElemen.innerHTML = `
+                    <option value="">
+                        Tidak tersedia
+                    </option>
+                `;
+
+                return;
+
+            }
+
+
+            if (!this.value) {
+                return;
+            }
+
+
+            dataUnsur[this.value].forEach(item => {
+
+                unsurElemen.innerHTML += `
+                    <option value="${item}">
+                        ${item}
+                    </option>
+                `;
+
+            });
+
+
+            unsurElemen.disabled = false;
+
+        });
+
+
+        unsurLainnya.addEventListener('input', function () {
+
+            if (kategoriUnsur.value === 'Lainnya') {
+
+                unsurElemen.innerHTML = `
+                    <option value="${this.value}">
+                        ${this.value}
+                    </option>
+                `;
+
+                unsurElemen.value = this.value;
+
+            }
+
+        });
+
+
+
+        bulanSelect.addEventListener('change', async function () {
+
+            resetSelect(inspeksiSelect, 'Pilih tanggal inspeksi');
+
+            if (!this.value) {
+                return;
+            }
+
+
+            const response = await fetch(
+                `/api/inspeksi/list/${bandaraSelect.value}/${tahunSelect.value}/${this.value}`
+            );
+
+
+            const data = await response.json();
+
+
+            data.forEach(inspeksi => {
+
+                inspeksiSelect.innerHTML += `
+                    <option value="${inspeksi.id}">
+                        ${inspeksi.tanggal}
+                    </option>
+                `;
+
+            });
+
+
+            inspeksiSelect.disabled = false;
+
+        });
+
+
+    });
+</script>
+@endsection

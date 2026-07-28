@@ -33,6 +33,7 @@
             id="form-edit-temuan"
             action="{{ route('temuan.update', $temuan) }}"
             method="POST"
+            enctype="multipart/form-data"
             data-status-awal="{{ $temuan->status }}"
         >
             @csrf
@@ -201,18 +202,23 @@
                             class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                             required
                         >
+                            
                             <option value="">Pilih tingkat risiko</option>
 
-                            @foreach (['Rendah', 'Tinggi'] as $risiko)
+                            @foreach (config('sitba.risiko') as $risiko)
                                 <option
                                     value="{{ $risiko }}"
                                     @selected(
-                                        old('tingkat_risiko', $temuan->tingkat_risiko) === $risiko
+                                        old(
+                                            'tingkat_risiko',
+                                            $temuan->tingkat_risiko
+                                        ) === $risiko
                                     )
                                 >
                                     {{ $risiko }}
                                 </option>
                             @endforeach
+
                         </select>
 
                         @error('tingkat_risiko')
@@ -222,6 +228,29 @@
                         @enderror
                     </div>
 
+                </div>
+
+                <div>
+                    <label
+                        for="due_date"
+                        class="mb-2 block text-sm font-semibold text-gray-700"
+                    >
+                        Due Date
+                    </label>
+
+                    <input
+                        type="date"
+                        id="due_date"
+                        name="due_date"
+                        value="{{ old('due_date', $temuan->due_date ? \Carbon\Carbon::parse($temuan->due_date)->format('Y-m-d') : '') }}"
+                        class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    >
+
+                    @error('due_date')
+                        <p class="mt-2 text-sm text-red-600">
+                            {{ $message }}
+                        </p>
+                    @enderror
                 </div>
 
                 <div>
@@ -238,19 +267,20 @@
                         class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         required
                     >
-                        <option
-                            value="Open"
-                            @selected(old('status', $temuan->status) === 'Open')
-                        >
-                            Open
-                        </option>
+                        
+                        <option value="">Pilih status</option>
 
-                        <option
-                            value="Close"
-                            @selected(old('status', $temuan->status) === 'Close')
-                        >
-                            Close
-                        </option>
+                        @foreach (config('sitba.status') as $status)
+                            <option
+                                value="{{ $status }}"
+                                @selected(
+                                    old('status', $temuan->status) === $status
+                                )
+                            >
+                                {{ $status }}
+                            </option>
+                        @endforeach
+
                     </select>
 
                     @error('status')
@@ -258,28 +288,41 @@
                             {{ $message }}
                         </p>
                     @enderror
+
                 </div>
+
+
 
                 <div
                     id="peringatan-penutupan"
-                    class="hidden rounded-xl border border-amber-200 bg-amber-50 px-5 py-4"
+                    class="hidden rounded-xl border px-5 py-4"
                 >
                     <div class="flex items-start gap-3">
+
                         <div class="text-xl">
                             ⚠️
                         </div>
 
                         <div>
-                            <p class="font-bold text-amber-800">
+
+                            <p
+                                id="judul-peringatan-penutupan"
+                                class="font-bold"
+                            >
                                 Perhatian sebelum menutup temuan
                             </p>
 
-                            <p class="mt-2 text-sm leading-relaxed text-amber-700">
+                            <p
+                                id="isi-peringatan-penutupan"
+                                class="mt-2 text-sm leading-relaxed"
+                            >
                                 Pastikan seluruh tindak lanjut telah selesai dan seluruh
                                 dokumen telah diverifikasi sebelum mengubah status temuan
                                 menjadi Close.
                             </p>
+
                         </div>
+
                     </div>
                 </div>
 
@@ -354,6 +397,35 @@
                                 </p>
                             @enderror
                         </div>
+
+
+                        <div>
+                            <label
+                                for="dokumen_penutupan"
+                                class="mb-2 block text-sm font-semibold text-green-900"
+                            >
+                                Dokumen Tindak Lanjut (PDF)
+                            </label>
+
+                            <input
+                                type="file"
+                                id="dokumen_penutupan"
+                                name="dokumen_penutupan"
+                                accept=".pdf"
+                                class="w-full rounded-xl border-green-300 bg-white shadow-sm focus:border-green-500 focus:ring-green-500"
+                            >
+
+                            <p class="mt-2 text-xs text-green-700">
+                                Upload dokumen tindak lanjut maksimal 5 MB.
+                            </p>
+
+                            @error('dokumen_penutupan')
+                                <p class="mt-2 text-sm text-red-600">
+                                    {{ $message }}
+                                </p>
+                            @enderror
+                        </div>
+
 
                     </div>
                 </div>
@@ -469,13 +541,73 @@
         let sudahDikonfirmasi = false;
 
         function aturBagianPenutupan() {
-            const statusClose = statusSelect.value === 'Close';
 
-            bagianPenutupan.classList.toggle('hidden', !statusClose);
-            peringatanPenutupan.classList.toggle('hidden', !statusClose);
+            const status = statusSelect.value;
 
-            tanggalClose.required = statusClose;
-            keteranganPenutupan.required = statusClose;
+            const statusPenutupan =
+                status === 'Close' ||
+                status === 'Satisfactory';
+
+
+            bagianPenutupan.classList.toggle(
+                'hidden',
+                !statusPenutupan
+            );
+
+            peringatanPenutupan.classList.toggle(
+                'hidden',
+                !statusPenutupan
+            );
+
+
+            tanggalClose.required = statusPenutupan;
+            keteranganPenutupan.required = statusPenutupan;
+
+
+            if (!statusPenutupan) {
+                return;
+            }
+
+
+            const judul =
+                document.getElementById(
+                    'judul-peringatan-penutupan'
+                );
+
+            const isi =
+                document.getElementById(
+                    'isi-peringatan-penutupan'
+                );
+
+
+            peringatanPenutupan.className =
+                'rounded-xl border border-amber-200 bg-amber-50 px-5 py-4';
+
+
+            judul.className =
+                'font-bold text-amber-800';
+
+            isi.className =
+                'mt-2 text-sm leading-relaxed text-amber-700';
+
+
+            if (status === 'Satisfactory') {
+
+                judul.textContent =
+                    'Perhatian sebelum menetapkan hasil pemeriksaan';
+
+                isi.textContent =
+                    'Pastikan tindakan korektif telah diverifikasi dan seluruh bukti pendukung telah sesuai sebelum mengubah status temuan menjadi Satisfactory.';
+
+            } else {
+
+                judul.textContent =
+                    'Perhatian sebelum menutup temuan';
+
+                isi.textContent =
+                    'Pastikan seluruh tindak lanjut telah selesai dan seluruh dokumen telah diverifikasi sebelum mengubah status temuan menjadi Close.';
+
+            }
         }
 
         function bukaModal() {

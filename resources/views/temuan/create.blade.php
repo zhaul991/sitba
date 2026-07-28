@@ -40,6 +40,108 @@
 
                 <div class="space-y-6">
 
+                    @if ($inspeksi)
+                        <input
+                            type="hidden"
+                            name="inspeksi_id"
+                            value="{{ $inspeksi->id }}"
+                        >
+
+                        <div class="rounded-2xl border border-blue-200 bg-blue-50 p-5">
+                            <p class="text-sm font-semibold uppercase tracking-wider text-blue-700">
+                                Kegiatan Inspeksi Terpilih
+                            </p>
+
+                            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                                <div>
+                                    <p class="text-xs font-semibold uppercase text-blue-600">
+                                        Bandara
+                                    </p>
+                                    <p class="mt-1 font-bold text-blue-950">
+                                        {{ $inspeksi->bandara->nama_bandara ?? '-' }}
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <p class="text-xs font-semibold uppercase text-blue-600">
+                                        Tanggal Inspeksi
+                                    </p>
+                                    <p class="mt-1 font-bold text-blue-950">
+                                        {{ $inspeksi->tanggal?->translatedFormat('d F Y') ?? '-' }}
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <p class="text-xs font-semibold uppercase text-blue-600">
+                                        Jenis Kegiatan
+                                    </p>
+                                    <p class="mt-1 font-bold text-blue-950">
+                                        {{ $inspeksi->jenis_inspeksi ?? '-' }}
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <p class="text-xs font-semibold uppercase text-blue-600">
+                                        ID Kegiatan
+                                    </p>
+                                    <p class="mt-1 font-bold text-blue-950">
+                                        #{{ $inspeksi->id }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                    @if ($inspeksi)
+                        <input
+                            type="hidden"
+                            name="inspeksi_id"
+                            value="{{ $inspeksi->id }}"
+                        >
+
+                        <div class="rounded-2xl border border-blue-200 bg-blue-50 p-5">
+                            <p class="text-sm font-semibold uppercase tracking-wider text-blue-700">
+                                Kegiatan Inspeksi Terpilih
+                            </p>
+
+                            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                                <div>
+                                    <p class="text-xs font-semibold uppercase text-blue-600">
+                                        Bandara
+                                    </p>
+                                    <p class="mt-1 font-bold text-blue-950">
+                                        {{ $inspeksi->bandara->nama_bandara ?? '-' }}
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <p class="text-xs font-semibold uppercase text-blue-600">
+                                        Tanggal Inspeksi
+                                    </p>
+                                    <p class="mt-1 font-bold text-blue-950">
+                                        {{ $inspeksi->tanggal?->translatedFormat('d F Y') ?? '-' }}
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <p class="text-xs font-semibold uppercase text-blue-600">
+                                        Jenis Kegiatan
+                                    </p>
+                                    <p class="mt-1 font-bold text-blue-950">
+                                        {{ $inspeksi->jenis_inspeksi ?? '-' }}
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <p class="text-xs font-semibold uppercase text-blue-600">
+                                        ID Kegiatan
+                                    </p>
+                                    <p class="mt-1 font-bold text-blue-950">
+                                        #{{ $inspeksi->id }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    @else
                     <div>
                         <label class="mb-2 block text-sm font-semibold text-gray-700">
                             Bandara
@@ -123,6 +225,86 @@
 
                     </div>
 
+
+
+                    @endif
+
+
+                    @endif
+
+                    <div>
+    
+                    <label
+                        for="kategori_unsur"
+                        class="mb-2 block text-sm font-semibold text-gray-700"
+                    >
+                        Kategori Unsur / Elemen
+                    </label>
+
+                    <select
+                        id="kategori_unsur"
+                        class="mb-4 w-full rounded-xl border-gray-300 shadow-sm
+                               focus:border-blue-500 focus:ring-blue-500"
+                    >
+                        <option value="">
+                            Pilih kategori unsur
+                        </option>
+
+                        @foreach ($unsurElemen as $kategori => $unsur)
+                            <option value="{{ $kategori }}">
+                                {{ $kategori }}
+                            </option>
+                        @endforeach
+
+                        <option value="Lainnya">
+                            Lainnya
+                        </option>
+                    </select>
+
+
+                    <label
+                        for="unsur_elemen"
+                        class="mb-2 block text-sm font-semibold text-gray-700"
+                    >
+                        Unsur / Elemen
+                    </label>
+
+                    <select
+                        id="unsur_elemen"
+                        name="unsur_elemen"
+                        class="w-full rounded-xl border-gray-300 shadow-sm
+                               focus:border-blue-500 focus:ring-blue-500"
+                        required
+                    >
+                        <option value="">
+                            Pilih unsur / elemen
+                        </option>
+                    </select>
+
+
+                    <div
+                        id="unsur-lainnya-wrapper"
+                        class="mt-4 hidden"
+                    >
+                        <label
+                            for="unsur_lainnya"
+                            class="mb-2 block text-sm font-semibold text-gray-700"
+                        >
+                            Keterangan Unsur / Elemen Lainnya
+                        </label>
+
+                        <textarea
+                            id="unsur_lainnya"
+                            rows="3"
+                            class="w-full rounded-xl border-gray-300 shadow-sm"
+                            placeholder="Masukkan unsur / elemen lainnya..."
+                        ></textarea>
+                    </div>
+
+
+                </div>
+
+
                 </div>
 
                 <div class="grid gap-6 sm:grid-cols-2">
@@ -151,29 +333,6 @@
                     </div>
 
                     <div>
-                        <label for="unsur_elemen"
-                               class="mb-2 block text-sm font-semibold text-gray-700">
-                            Unsur / Elemen
-                        </label>
-
-                        <input
-                            type="text"
-                            id="unsur_elemen"
-                            name="unsur_elemen"
-                            value="{{ old('unsur_elemen') }}"
-                            placeholder="Contoh: Runway, Apron, Terminal"
-                            class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                            required
-                        >
-
-                        @error('unsur_elemen')
-                            <p class="mt-2 text-sm text-red-600">
-                                {{ $message }}
-                            </p>
-                        @enderror
-                    </div>
-
-                    <div>
                         <label
                             for="status"
                             class="mb-2 block text-sm font-semibold text-gray-700"
@@ -187,21 +346,18 @@
                             class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                             required
                         >
+                            
                             <option value="">Pilih status</option>
 
-                            <option
-                                value="Open"
-                                @selected(old('status', 'Open') === 'Open')
-                            >
-                                Open
-                            </option>
+                            @foreach (config('sitba.status') as $status)
+                                <option
+                                    value="{{ $status }}"
+                                    @selected(old('status', 'Open') === $status)
+                                >
+                                    {{ $status }}
+                                </option>
+                            @endforeach
 
-                            <option
-                                value="Close"
-                                @selected(old('status') === 'Close')
-                            >
-                                Close
-                            </option>
                         </select>
 
                         <p class="mt-2 text-xs text-gray-500">
@@ -243,14 +399,14 @@
 
                 <div
                     id="bagian-penutupan"
-                    class="hidden rounded-2xl border border-green-200 bg-green-50 p-5"
+                    class="hidden rounded-2xl border border-red-200 bg-red-50 p-5"
                 >
                     <div class="mb-5">
-                        <h2 class="text-lg font-bold text-green-900">
+                        <h2 class="text-lg font-bold text-red-900">
                             Informasi Penutupan
                         </h2>
 
-                        <p class="mt-1 text-sm text-green-700">
+                        <p class="mt-1 text-sm text-red-700">
                             Lengkapi informasi penutupan untuk temuan yang telah selesai.
                         </p>
                     </div>
@@ -260,7 +416,7 @@
                         <div>
                             <label
                                 for="tanggal_close"
-                                class="mb-2 block text-sm font-semibold text-green-900"
+                                class="mb-2 block text-sm font-semibold text-red-900"
                             >
                                 Tanggal Penutupan
                             </label>
@@ -270,7 +426,7 @@
                                 id="tanggal_close"
                                 name="tanggal_close"
                                 value="{{ old('tanggal_close') }}"
-                                class="w-full rounded-xl border-green-300 bg-white shadow-sm focus:border-green-500 focus:ring-green-500"
+                                class="w-full rounded-xl border-red-300 bg-white shadow-sm focus:border-red-500 focus:ring-red-500"
                             >
 
                             @error('tanggal_close')
@@ -283,7 +439,7 @@
                         <div>
                             <label
                                 for="keterangan_penutupan"
-                                class="mb-2 block text-sm font-semibold text-green-900"
+                                class="mb-2 block text-sm font-semibold text-red-900"
                             >
                                 Keterangan Penutupan
                             </label>
@@ -293,10 +449,10 @@
                                 name="keterangan_penutupan"
                                 rows="4"
                                 placeholder="Contoh: Seluruh dokumen telah diverifikasi."
-                                class="w-full rounded-xl border-green-300 bg-white shadow-sm focus:border-green-500 focus:ring-green-500"
+                                class="w-full rounded-xl border-red-300 bg-white shadow-sm focus:border-red-500 focus:ring-red-500"
                             >{{ old('keterangan_penutupan') }}</textarea>
 
-                            <p class="mt-2 text-xs text-green-700">
+                            <p class="mt-2 text-xs text-red-700">
                                 Jelaskan secara singkat dasar penutupan temuan.
                             </p>
 
@@ -310,7 +466,26 @@
                     </div>
                 </div>
 
-                <div>
+                
+                <div class="mb-6">
+                    <label for="due_date"
+                        class="mb-2 block text-sm font-medium text-gray-700">
+                        Due Date
+                    </label>
+
+                    <input
+                        type="date"
+                        id="due_date"
+                        name="due_date"
+                        value="{{ old('due_date') }}"
+                        class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+
+                    @error('due_date')
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+<div>
                     <label for="uraian_temuan"
                            class="mb-2 block text-sm font-semibold text-gray-700">
                         Uraian Temuan
@@ -369,13 +544,18 @@
                             class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                             required
                         >
+                            
                             <option value="">Pilih tingkat risiko</option>
-                            <option value="Rendah" @selected(old('tingkat_risiko') === 'Rendah')>
-                                Rendah
-                            </option>
-                            <option value="Tinggi" @selected(old('tingkat_risiko') === 'Tinggi')>
-                                Tinggi
-                            </option>
+
+                            @foreach (config('sitba.risiko') as $risiko)
+                                <option
+                                    value="{{ $risiko }}"
+                                    @selected(old('tingkat_risiko') === $risiko)
+                                >
+                                    {{ $risiko }}
+                                </option>
+                            @endforeach
+
                         </select>
 
                         @error('tingkat_risiko')
@@ -560,7 +740,7 @@
         }
 
 
-        bandaraSelect.addEventListener('change', async function () {
+        bandaraSelect?.addEventListener('change', async function () {
 
             resetSelect(tahunSelect, 'Pilih tahun');
             resetSelect(bulanSelect, 'Pilih bulan');
@@ -591,7 +771,7 @@
         });
 
 
-        tahunSelect.addEventListener('change', async function () {
+        tahunSelect?.addEventListener('change', async function () {
 
             resetSelect(bulanSelect, 'Pilih bulan');
             resetSelect(inspeksiSelect, 'Pilih tanggal inspeksi');
@@ -640,7 +820,94 @@
         });
 
 
-        bulanSelect.addEventListener('change', async function () {
+        const kategoriUnsur = document.getElementById('kategori_unsur');
+        const unsurElemen = document.getElementById('unsur_elemen');
+        const unsurLainnyaWrapper = document.getElementById('unsur-lainnya-wrapper');
+        const unsurLainnya = document.getElementById('unsur_lainnya');
+
+
+        const dataUnsur = @json($unsurElemen);
+
+
+        function resetUnsur() {
+
+            unsurElemen.innerHTML = `
+                <option value="">
+                    Pilih unsur / elemen
+                </option>
+            `;
+
+            unsurElemen.disabled = true;
+
+        }
+
+
+        kategoriUnsur.addEventListener('change', function () {
+
+            resetUnsur();
+
+            unsurLainnyaWrapper.classList.add('hidden');
+
+
+            if (this.value === 'Lainnya') {
+
+                unsurLainnyaWrapper.classList.remove('hidden');
+
+                unsurElemen.disabled = true;
+
+                unsurElemen.innerHTML = `
+                    <option value="">
+                        Tidak tersedia
+                    </option>
+                `;
+
+                return;
+
+            }
+
+
+            if (!this.value) {
+                return;
+            }
+
+
+            const daftarUnsur = dataUnsur[this.value] ?? [];
+
+            daftarUnsur.forEach(item => {
+
+                unsurElemen.innerHTML += `
+                    <option value="${item}">
+                        ${item}
+                    </option>
+                `;
+
+            });
+
+
+            unsurElemen.disabled = false;
+
+        });
+
+
+        unsurLainnya.addEventListener('input', function () {
+
+            if (kategoriUnsur.value === 'Lainnya') {
+
+                unsurElemen.innerHTML = `
+                    <option value="${this.value}">
+                        ${this.value}
+                    </option>
+                `;
+
+                unsurElemen.value = this.value;
+
+            }
+
+        });
+
+
+
+        bulanSelect?.addEventListener('change', async function () {
 
             resetSelect(inspeksiSelect, 'Pilih tanggal inspeksi');
 

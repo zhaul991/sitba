@@ -6,12 +6,14 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BandaraController;
 use App\Http\Controllers\PetugasController;
 use App\Http\Controllers\InspeksiController;
+use App\Http\Controllers\PemantauanController;
 use App\Http\Controllers\TemuanController;
 use App\Http\Controllers\TindakLanjutController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\FotoTemuanController;
 use App\Http\Controllers\GlobalSearchController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\HasilPengawasanController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -48,7 +50,52 @@ Route::middleware('auth')->group(function () {
     Route::resource('bandara', BandaraController::class);
     Route::resource('petugas', PetugasController::class);
     Route::resource('inspeksi', InspeksiController::class);
+
+    Route::resource('pemantauan', PemantauanController::class)
+        ->parameters([
+            'pemantauan' => 'inspeksi',
+        ]);
+
+
+
+    Route::view('/pengamatan', 'coming-soon', [
+        'judul' => 'Pengamatan',
+        'ikon' => '🔎',
+        'deskripsi' => 'Modul Pengamatan sedang dalam tahap pengembangan.',
+    ])->name('pengamatan.index');
+
+    Route::view('/audit', 'coming-soon', [
+        'judul' => 'Audit',
+        'ikon' => '📝',
+        'deskripsi' => 'Modul Audit sedang dalam tahap pengembangan.',
+    ])->name('audit.index');
+    Route::get(
+        '/hasil-pengawasan/pemantauan',
+        [HasilPengawasanController::class, 'index']
+    )
+        ->defaults('jenis', 'pemantauan')
+        ->name('hasil-pengawasan.pemantauan');
+
+    Route::get(
+        '/hasil-pengawasan/pengamatan',
+        [HasilPengawasanController::class, 'index']
+    )
+        ->defaults('jenis', 'pengamatan')
+        ->name('hasil-pengawasan.pengamatan');
+
+    Route::get(
+        '/hasil-pengawasan/audit',
+        [HasilPengawasanController::class, 'index']
+    )
+        ->defaults('jenis', 'audit')
+        ->name('hasil-pengawasan.audit');
+
     Route::resource('temuan', TemuanController::class);
+
+    Route::post(
+        '/temuan/{temuan}/close',
+        [TemuanController::class, 'close']
+    )->name('temuan.close');
 
     Route::get(
         '/api/inspeksi/tahun/{bandara}',

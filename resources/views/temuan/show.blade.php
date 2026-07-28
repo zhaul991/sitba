@@ -372,12 +372,172 @@
                         </p>
                     </div>
 
-                    <a href="{{ route('tindaklanjut.create', ['temuan_id' => $temuan->id]) }}"
-                       class="rounded-xl bg-blue-600 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-blue-700">
-                        + Tambah Tindak Lanjut
-                    </a>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+
+                        <a href="{{ route('tindaklanjut.create', ['temuan_id' => $temuan->id]) }}"
+                           class="rounded-xl bg-blue-600 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-blue-700">
+                            + Tambah Tindak Lanjut
+                        </a>
+
+
+                        @if ($temuan->status !== 'Close')
+
+                            <button
+                                type="button"
+                                onclick="document.getElementById('form-penutupan').classList.toggle('hidden')"
+                                class="rounded-xl bg-red-600 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-red-700"
+                            >
+                                Tutup Temuan
+                            </button>
+
+                        @endif
+
+                    </div>
 
                 </div>
+
+                <div
+                    id="form-penutupan"
+                    class="mt-6 hidden rounded-2xl border border-red-200 bg-red-50 p-5"
+                >
+
+                    <div class="mb-4">
+
+                        <h3 class="text-lg font-bold text-red-800">
+                            ⚠️ Penutupan Temuan
+                        </h3>
+
+                        <p class="mt-1 text-sm text-red-700">
+                            Pastikan tindak lanjut telah selesai dan dokumen pendukung tersedia sebelum menutup temuan.
+                        </p>
+
+                    </div>
+
+
+                    <form
+                        action="{{ route('temuan.close', $temuan) }}"
+                        method="POST"
+                        enctype="multipart/form-data"
+                    >
+
+                        @csrf
+
+
+                        <div class="mb-4">
+
+                            <label
+                                class="mb-2 block text-sm font-semibold text-red-900"
+                            >
+                                Keterangan Penutupan
+                            </label>
+
+
+                            <textarea
+                                name="keterangan_penutupan"
+                                rows="4"
+                                class="w-full rounded-xl border-red-300 bg-white shadow-sm focus:border-red-500 focus:ring-red-500"
+                                placeholder="Jelaskan dasar penutupan temuan..."
+                                required
+                            ></textarea>
+
+                        </div>
+
+
+
+                        <div class="mb-5">
+
+                            <label
+                                class="mb-2 block text-sm font-semibold text-red-900"
+                            >
+                                Dokumen Pendukung (PDF)
+                            </label>
+
+
+                            <input
+                                type="file"
+                                name="dokumen_penutupan"
+                                accept=".pdf"
+                                class="w-full rounded-xl border-red-300 bg-white shadow-sm"
+                                required
+                            >
+
+
+                            <p class="mt-1 text-xs text-red-700">
+                                Format PDF maksimal 5 MB.
+                            </p>
+
+                        </div>
+
+
+
+                        <button
+                            type="submit"
+                            onclick="return confirm('Yakin ingin menutup temuan ini?')"
+                            class="rounded-xl bg-red-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-800"
+                        >
+                            Konfirmasi Tutup Temuan
+                        </button>
+
+
+                    </form>
+
+
+                    @if ($temuan->tanggal_close)
+
+                        <div class="mt-5 rounded-xl border border-green-200 bg-green-50 p-4">
+
+                            <p class="text-sm font-semibold text-green-800">
+                                Tanggal Penutupan
+                            </p>
+
+                            <p class="mt-1 text-sm text-green-700">
+                                {{ $temuan->tanggal_close->format('d F Y') }}
+                            </p>
+
+                            @if ($temuan->keterangan_penutupan)
+
+                                <div class="mt-4">
+
+                                    <p class="text-sm font-semibold text-green-900">
+                                        Keterangan Penutupan
+                                    </p>
+
+                                    <p class="mt-1 text-sm text-green-700">
+                                        {{ $temuan->keterangan_penutupan }}
+                                    </p>
+
+                                </div>
+
+                            @endif
+
+
+                            @if ($temuan->dokumen_penutupan)
+
+                                <a
+                                    href="{{ Storage::url($temuan->dokumen_penutupan) }}"
+                                    target="_blank"
+                                    class="mt-4 inline-flex items-center rounded-lg bg-green-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-green-700"
+                                >
+                                    📄 Lihat Dokumen Penutupan
+                                </a>
+
+                            @endif
+
+
+                            <a
+                                href="{{ route('laporan.index') }}"
+                                class="mt-3 inline-flex items-center rounded-lg bg-green-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-green-700"
+                            >
+                                Lihat Arsip Tindak Lanjut
+                            </a>
+
+                        </div>
+
+                    @endif
+
+
+                </div>
+
 
                 <div class="mt-6 space-y-3">
 
@@ -429,7 +589,7 @@
                                 <div class="flex gap-2">
 
                                     <a
-                                        href="{{ route('tindaklanjut.edit', $item) }}"
+                                        href="{{ route('tindaklanjut.edit', ['tindakLanjut' => $item->id]) }}"
                                         class="rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100"
                                     >
                                         Edit
@@ -491,7 +651,7 @@
                         </h2>
 
                         <p class="mt-1 text-sm text-gray-500">
-                            Dokumentasi foto kondisi temuan.
+                            Dokumentasi foto tindak lanjut.
                         </p>
                     </div>
 

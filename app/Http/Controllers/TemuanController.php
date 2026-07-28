@@ -6,6 +6,7 @@ use App\Models\Bandara;
 use App\Models\Inspeksi;
 use App\Models\Temuan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class TemuanController extends Controller
@@ -24,6 +25,7 @@ class TemuanController extends Controller
 
         $status = $request->query('status');
         $tingkatRisiko = $request->query('tingkat_risiko');
+        $jenisPengawasan = $request->query('jenis_pengawasan');
 
         $tahun = $request->filled('tahun')
             ? $request->integer('tahun')
@@ -91,6 +93,14 @@ class TemuanController extends Controller
                     }
                 );
             })
+            ->when($jenisPengawasan, function ($query, $jenisPengawasan) {
+                $query->whereHas(
+                    'inspeksi',
+                    function ($query) use ($jenisPengawasan) {
+                        $query->where('jenis_inspeksi', $jenisPengawasan);
+                    }
+                );
+            })
             ->when($status, function ($query, $status) {
                 $query->where('status', $status);
             })
@@ -104,8 +114,24 @@ class TemuanController extends Controller
             ->where('status', 'Open')
             ->count();
 
+        $totalUnsatisfactory = (clone $queryTemuan)
+            ->where('status', 'Unsatisfactory')
+            ->count();
+
+        $totalSatisfactory = (clone $queryTemuan)
+            ->where('status', 'Satisfactory')
+            ->count();
+
         $totalClose = (clone $queryTemuan)
             ->where('status', 'Close')
+            ->count();
+
+        $totalRisikoRendah = (clone $queryTemuan)
+            ->where('tingkat_risiko', 'Rendah')
+            ->count();
+
+        $totalRisikoSedang = (clone $queryTemuan)
+            ->where('tingkat_risiko', 'Sedang')
             ->count();
 
         $totalRisikoTinggi = (clone $queryTemuan)
@@ -140,7 +166,11 @@ class TemuanController extends Controller
             'daftarTahun',
             'totalTemuan',
             'totalOpen',
+            'totalUnsatisfactory',
+            'totalSatisfactory',
             'totalClose',
+            'totalRisikoRendah',
+            'totalRisikoSedang',
             'totalRisikoTinggi'
         ));
     }
@@ -152,9 +182,20 @@ class TemuanController extends Controller
 
         $inspeksiTerpilih = $request->inspeksi_id;
 
+        $inspeksi = null;
+
+        if ($inspeksiTerpilih) {
+            $inspeksi = Inspeksi::with('bandara')
+                ->findOrFail($inspeksiTerpilih);
+        }
+
+        $unsurElemen = config('unsur_elemen');
+
         return view('temuan.create', compact(
             'bandaras',
-            'inspeksiTerpilih'
+            'inspeksiTerpilih',
+            'inspeksi',
+            'unsurElemen'
         ));
     }
 
@@ -167,7 +208,7 @@ class TemuanController extends Controller
         $temuan = Temuan::create($validated);
 
         return redirect()
-            ->route('temuan.show', $temuan)
+            ->route('inspeksi.show', $temuan->inspeksi_id)
             ->with('success', 'Data temuan berhasil ditambahkan.');
     }
 
@@ -202,12 +243,103 @@ class TemuanController extends Controller
 
         $validated = $this->normalisasiDataPenutupan($validated);
 
+        unset($validated['dokumen_penutupan']);
+
+
+        if (
+            isset($validated['status']) &&
+            !in_array($validated['status'], [
+                'Close',
+                'Satisfactory'
+            ])
+        ) {
+
+            if ($temuan->dokumen_penutupan) {
+
+                Storage::disk('public')
+                    ->delete($temuan->dokumen_penutupan);
+
+            }
+
+
+            $validated['tanggal_close'] = null;
+            $validated['keterangan_penutupan'] = null;
+            $validated['dokumen_penutupan'] = null;
+
+        }
+
+
+        if ($request->hasFile('dokumen_penutupan')) {
+
+            if ($temuan->dokumen_penutupan) {
+
+                Storage::disk('public')
+                    ->delete($temuan->dokumen_penutupan);
+
+            }
+
+            $path = $request->file('dokumen_penutupan')
+                ->store('penutupan', 'public');
+
+            $validated['dokumen_penutupan'] = $path;
+        }
+
+
         $temuan->update($validated);
+
 
         return redirect()
             ->route('temuan.show', $temuan)
             ->with('success', 'Data temuan berhasil diperbarui.');
     }
+
+    public function close(Request $request, Temuan $temuan)
+    {
+        $validated = $request->validate([
+            'keterangan_penutupan' => [
+                'required',
+                'string',
+                'max:1000',
+            ],
+
+            'dokumen_penutupan' => [
+                'required',
+                'file',
+                'mimes:pdf',
+                'max:5120',
+            ],
+        ], [
+            'keterangan_penutupan.required' =>
+                'Keterangan penutupan wajib diisi.',
+
+            'dokumen_penutupan.required' =>
+                'Dokumen pendukung penutupan wajib diunggah.',
+
+            'dokumen_penutupan.mimes' =>
+                'Dokumen harus berupa file PDF.',
+
+            'dokumen_penutupan.max' =>
+                'Ukuran dokumen maksimal 5 MB.',
+        ]);
+
+
+        $path = $request->file('dokumen_penutupan')
+            ->store('penutupan', 'public');
+
+
+        $temuan->update([
+            'status' => 'Close',
+            'tanggal_close' => now()->toDateString(),
+            'keterangan_penutupan' => $validated['keterangan_penutupan'],
+            'dokumen_penutupan' => $path,
+        ]);
+
+
+        return redirect()
+            ->route('temuan.show', $temuan)
+            ->with('success', 'Temuan berhasil ditutup.');
+    }
+
 
     public function destroy(Temuan $temuan)
     {
@@ -302,10 +434,12 @@ class TemuanController extends Controller
 
             'tingkat_risiko' => [
                 'required',
-                Rule::in([
-                    'Rendah',
-                    'Tinggi',
-                ]),
+                Rule::in(config('sitba.risiko')),
+            ],
+
+            'due_date' => [
+                'nullable',
+                'date',
             ],
 
             'lokasi' => [
@@ -316,23 +450,27 @@ class TemuanController extends Controller
 
             'status' => [
                 'required',
-                Rule::in([
-                    'Open',
-                    'Close',
-                ]),
+                Rule::in(config('sitba.status')),
             ],
 
             'tanggal_close' => [
                 'nullable',
-                'required_if:status,Close',
+                'required_if:status,Close,Satisfactory',
                 'date',
             ],
 
             'keterangan_penutupan' => [
                 'nullable',
-                'required_if:status,Close',
+                'required_if:status,Close,Satisfactory',
                 'string',
                 'max:3000',
+            ],
+
+            'dokumen_penutupan' => [
+                'nullable',
+                'file',
+                'mimes:pdf',
+                'max:5120',
             ],
         ], [
             'inspeksi_id.required' =>
@@ -366,7 +504,7 @@ class TemuanController extends Controller
                 'Status temuan wajib dipilih.',
 
             'status.in' =>
-                'Status temuan harus Open atau Close.',
+                'Status temuan yang dipilih tidak valid.',
 
             'tanggal_close.required_if' =>
                 'Tanggal penutupan wajib diisi untuk temuan Close.',
@@ -385,9 +523,16 @@ class TemuanController extends Controller
     private function normalisasiDataPenutupan(
         array $validated
     ): array {
-        if ($validated['status'] === 'Open') {
+
+        if (
+            !in_array($validated['status'], [
+                'Close',
+                'Satisfactory'
+            ])
+        ) {
             $validated['tanggal_close'] = null;
             $validated['keterangan_penutupan'] = null;
+            $validated['dokumen_penutupan'] = null;
         }
 
         return $validated;

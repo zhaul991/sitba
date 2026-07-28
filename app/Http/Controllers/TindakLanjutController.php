@@ -58,16 +58,16 @@ class TindakLanjutController extends Controller
             );
     }
 
-    public function edit(TindakLanjut $tindaklanjut)
+    public function edit(TindakLanjut $tindakLanjut)
     {
-        $tindaklanjut->load('temuan.inspeksi.bandara');
+        $tindakLanjut->load('temuan.inspeksi.bandara');
 
-        return view('tindaklanjut.edit', compact('tindaklanjut'));
+        return view('tindaklanjut.edit', compact('tindakLanjut'));
     }
 
     public function update(
         Request $request,
-        TindakLanjut $tindaklanjut
+        TindakLanjut $tindakLanjut
     ) {
         $validated = $request->validate([
             'rencana_perbaikan' => ['required', 'string'],
@@ -84,21 +84,21 @@ class TindakLanjutController extends Controller
             'catatan' => ['nullable', 'string'],
         ]);
 
-        $tindaklanjut->update($validated);
+        $tindakLanjut->update($validated);
 
         return redirect()
-            ->route('temuan.show', $tindaklanjut->temuan_id)
+            ->route('temuan.show', $tindakLanjut->temuan_id)
             ->with(
                 'success',
                 'Tindak lanjut berhasil diperbarui. Status Temuan tidak berubah otomatis.'
             );
     }
 
-    public function destroy(TindakLanjut $tindaklanjut)
+    public function destroy(TindakLanjut $tindakLanjut)
     {
-        $temuanId = $tindaklanjut->temuan_id;
+        $temuanId = $tindakLanjut->temuan_id;
 
-        $tindaklanjut->delete();
+        $tindakLanjut->delete();
 
         return redirect()
             ->route('temuan.show', $temuanId)

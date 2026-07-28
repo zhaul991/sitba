@@ -1,0 +1,418 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Bandara;
+use App\Models\Laporan;
+use App\Models\Temuan;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Throwable;
+
+class LaporanController extends Controller
+{
+    public function index(Request $request)
+    {
+        $bandaras = Bandara::orderBy('nama_bandara')->get();
+
+
+        $daftarTahun = Laporan::query()
+            ->selectRaw('DISTINCT strftime("%Y", tanggal_surat) AS tahun')
+            ->whereNotNull('tanggal_surat')
+            ->orderByDesc('tahun')
+            ->pluck('tahun');
+
+
+        $laporans = Laporan::with('bandara')
+            ->when($request->filled('bandara_id'), function ($query) use ($request) {
+                $query->where('bandara_id', $request->bandara_id);
+            })
+            ->when($request->filled('tahun'), function ($query) use ($request) {
+                $query->whereYear('tanggal_surat', $request->tahun);
+            })
+            ->when($request->filled('q'), function ($query) use ($request) {
+                $query->where(
+                    'nomor_surat',
+                    'like',
+                    '%' . trim($request->q) . '%'
+                );
+            })
+            ->latest('tanggal_surat')
+            ->paginate(10)
+            ->withQueryString();
+
+
+        return view('laporan.index', compact(
+            'laporans',
+            'bandaras',
+            'daftarTahun'
+        ));
+    }
+
+    public function create()
+    {
+        $bandaras = Bandara::orderBy('nama_bandara')->get();
+
+        return view('laporan.create', compact('bandaras'));
+    }
+
+    public function temuanByBandara(Bandara $bandara)
+    {
+        $temuans = Temuan::with('inspeksi')
+            ->where('status', 'Open')
+            ->whereHas('inspeksi', function ($query) use ($bandara) {
+                $query->where('bandara_id', $bandara->id);
+            })
+            ->latest('id')
+            ->get()
+            ->map(function ($temuan) {
+                return [
+                    'id' => $temuan->id,
+                    'nomor_temuan' => $temuan->nomor_temuan,
+                    'uraian_temuan' => $temuan->uraian_temuan,
+                    'unsur_elemen' => $temuan->unsur_elemen,
+                    'tingkat_risiko' => $temuan->tingkat_risiko,
+                    'lokasi' => $temuan->lokasi,
+                    'tanggal_inspeksi' => optional($temuan->inspeksi)->tanggal,
+                ];
+            });
+
+        return response()->json([
+            'data' => $temuans,
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'bandara_id' => ['required', 'exists:bandaras,id'],
+            'nomor_surat' => ['required', 'string', 'max:255'],
+            'tanggal_surat' => ['required', 'date'],
+            'perihal' => ['nullable', 'string', 'max:255'],
+            'keterangan' => ['nullable', 'string'],
+            'file_surat' => ['required', 'file', 'mimes:pdf', 'max:5120'],
+            'temuan_ids' => ['required', 'array', 'min:1'],
+            'temuan_ids.*' => ['required', 'distinct', 'exists:temuans,id'],
+        ]);
+
+        $temuanIds = collect($validated['temuan_ids'])
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        $temuans = Temuan::with('inspeksi')
+            ->whereIn('id', $temuanIds)
+            ->where('status', 'Open')
+            ->get();
+
+        if ($temuans->count() !== $temuanIds->count()) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'temuan_ids' => 'Terdapat temuan yang tidak valid atau sudah ditutup.',
+                ]);
+        }
+
+        $adaTemuanBandaraLain = $temuans->contains(function ($temuan) use ($validated) {
+            return (int) optional($temuan->inspeksi)->bandara_id
+                !== (int) $validated['bandara_id'];
+        });
+
+        if ($adaTemuanBandaraLain) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'temuan_ids' => 'Semua temuan harus berasal dari bandara yang dipilih.',
+                ]);
+        }
+
+        $filePath = $request->file('file_surat')
+            ->store('laporan', 'public');
+
+        try {
+            DB::transaction(function () use (
+                $validated,
+                $temuanIds,
+                $temuans,
+                $filePath
+            ) {
+                $laporan = Laporan::create([
+                    'bandara_id' => $validated['bandara_id'],
+                    'nomor_surat' => $validated['nomor_surat'],
+                    'tanggal_surat' => $validated['tanggal_surat'],
+                    'perihal' => $validated['perihal'] ?? null,
+                    'keterangan' => $validated['keterangan'] ?? null,
+                    'file_surat' => $filePath,
+                ]);
+
+                $pivotData = [];
+
+                foreach ($temuanIds as $temuanId) {
+                    $pivotData[$temuanId] = [
+                        'menutup_temuan' => true,
+                        'catatan_verifikasi' =>
+                            'Ditutup berdasarkan surat tindak lanjut nomor '
+                            . $validated['nomor_surat'],
+                    ];
+                }
+
+                $laporan->temuans()->attach($pivotData);
+
+                foreach ($temuans as $temuan) {
+                    $temuan->update([
+                        'status' => 'Close',
+                        'tanggal_close' => $validated['tanggal_surat'],
+                        'keterangan_penutupan' =>
+                            'Ditutup berdasarkan surat tindak lanjut nomor '
+                            . $validated['nomor_surat'],
+                    ]);
+                }
+            });
+        } catch (Throwable $error) {
+            if (Storage::disk('public')->exists($filePath)) {
+                Storage::disk('public')->delete($filePath);
+            }
+
+            throw $error;
+        }
+
+        return redirect()
+            ->route('laporan.index')
+            ->with(
+                'success',
+                'Laporan berhasil disimpan dan temuan langsung ditutup.'
+            );
+    }
+
+    public function show(Laporan $laporan)
+    {
+        $laporan->load([
+            'bandara',
+            'temuans.inspeksi',
+        ]);
+
+        return view('laporan.show', compact('laporan'));
+    }
+
+    public function edit(Laporan $laporan)
+    {
+        $laporan->load('temuans');
+
+        $bandaras = Bandara::orderBy('nama_bandara')->get();
+
+        $temuans = Temuan::with('inspeksi.bandara')
+            ->where(function ($query) use ($laporan) {
+                $query->where('status', 'Open')
+                    ->orWhereIn('id', $laporan->temuans->pluck('id'));
+            })
+            ->latest('id')
+            ->get();
+
+        return view('laporan.edit', compact(
+            'laporan',
+            'bandaras',
+            'temuans'
+        ));
+    }
+
+    public function update(Request $request, Laporan $laporan)
+    {
+        $validated = $request->validate([
+            'bandara_id' => ['required', 'exists:bandaras,id'],
+            'nomor_surat' => ['required', 'string', 'max:255'],
+            'tanggal_surat' => ['required', 'date'],
+            'perihal' => ['nullable', 'string', 'max:255'],
+            'keterangan' => ['nullable', 'string'],
+            'file_surat' => ['nullable', 'file', 'mimes:pdf', 'max:5120'],
+            'temuan_ids' => ['required', 'array', 'min:1'],
+            'temuan_ids.*' => ['required', 'distinct', 'exists:temuans,id'],
+        ]);
+
+        $laporan->load('temuans');
+
+        $temuanIdsLama = $laporan->temuans
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->values();
+
+        $temuanIdsBaru = collect($validated['temuan_ids'])
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        $temuans = Temuan::with('inspeksi')
+            ->whereIn('id', $temuanIdsBaru)
+            ->where(function ($query) use ($temuanIdsLama) {
+                $query->where('status', 'Open')
+                    ->orWhereIn('id', $temuanIdsLama);
+            })
+            ->get();
+
+        if ($temuans->count() !== $temuanIdsBaru->count()) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'temuan_ids' =>
+                        'Terdapat temuan yang tidak valid atau telah ditutup oleh laporan lain.',
+                ]);
+        }
+
+        $adaTemuanBandaraLain = $temuans->contains(function ($temuan) use ($validated) {
+            return (int) optional($temuan->inspeksi)->bandara_id
+                !== (int) $validated['bandara_id'];
+        });
+
+        if ($adaTemuanBandaraLain) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'temuan_ids' => 'Semua temuan harus berasal dari bandara yang dipilih.',
+                ]);
+        }
+
+        $temuanIdsDilepas = $temuanIdsLama
+            ->diff($temuanIdsBaru)
+            ->values();
+
+        $fileLama = $laporan->file_surat;
+        $fileBaru = null;
+
+        if ($request->hasFile('file_surat')) {
+            $fileBaru = $request->file('file_surat')
+                ->store('laporan', 'public');
+        }
+
+        try {
+            DB::transaction(function () use (
+                $validated,
+                $laporan,
+                $temuans,
+                $temuanIdsBaru,
+                $temuanIdsDilepas,
+                $fileBaru
+            ) {
+                $data = [
+                    'bandara_id' => $validated['bandara_id'],
+                    'nomor_surat' => $validated['nomor_surat'],
+                    'tanggal_surat' => $validated['tanggal_surat'],
+                    'perihal' => $validated['perihal'] ?? null,
+                    'keterangan' => $validated['keterangan'] ?? null,
+                ];
+
+                if ($fileBaru) {
+                    $data['file_surat'] = $fileBaru;
+                }
+
+                $laporan->update($data);
+
+                $pivotData = [];
+
+                foreach ($temuanIdsBaru as $temuanId) {
+                    $pivotData[$temuanId] = [
+                        'menutup_temuan' => true,
+                        'catatan_verifikasi' =>
+                            'Ditutup berdasarkan surat tindak lanjut nomor '
+                            . $validated['nomor_surat'],
+                    ];
+                }
+
+                $laporan->temuans()->sync($pivotData);
+
+                foreach ($temuans as $temuan) {
+                    $temuan->update([
+                        'status' => 'Close',
+                        'tanggal_close' => $validated['tanggal_surat'],
+                        'keterangan_penutupan' =>
+                            'Ditutup berdasarkan surat tindak lanjut nomor '
+                            . $validated['nomor_surat'],
+                    ]);
+                }
+
+                foreach ($temuanIdsDilepas as $temuanId) {
+                    $masihDitutupLaporanLain = DB::table('laporan_temuan')
+                        ->where('temuan_id', $temuanId)
+                        ->where('menutup_temuan', true)
+                        ->exists();
+
+                    if (!$masihDitutupLaporanLain) {
+                        Temuan::whereKey($temuanId)->update([
+                            'status' => 'Open',
+                            'tanggal_close' => null,
+                            'keterangan_penutupan' => null,
+                        ]);
+                    }
+                }
+            });
+        } catch (Throwable $error) {
+            if (
+                $fileBaru &&
+                Storage::disk('public')->exists($fileBaru)
+            ) {
+                Storage::disk('public')->delete($fileBaru);
+            }
+
+            throw $error;
+        }
+
+        if (
+            $fileBaru &&
+            $fileLama &&
+            Storage::disk('public')->exists($fileLama)
+        ) {
+            Storage::disk('public')->delete($fileLama);
+        }
+
+        return redirect()
+            ->route('laporan.show', $laporan)
+            ->with(
+                'success',
+                'Laporan berhasil diperbarui dan status temuan telah disesuaikan.'
+            );
+    }
+
+    public function destroy(Laporan $laporan)
+    {
+        $laporan->load('temuans');
+
+        $fileSurat = $laporan->file_surat;
+
+        $temuanIds = $laporan->temuans
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->values();
+
+        DB::transaction(function () use ($laporan, $temuanIds) {
+            $laporan->delete();
+
+            foreach ($temuanIds as $temuanId) {
+                $masihDitutupLaporanLain = DB::table('laporan_temuan')
+                    ->where('temuan_id', $temuanId)
+                    ->where('menutup_temuan', true)
+                    ->exists();
+
+                if (!$masihDitutupLaporanLain) {
+                    Temuan::whereKey($temuanId)->update([
+                        'status' => 'Open',
+                        'tanggal_close' => null,
+                        'keterangan_penutupan' => null,
+                    ]);
+                }
+            }
+        });
+
+        if (
+            $fileSurat &&
+            Storage::disk('public')->exists($fileSurat)
+        ) {
+            Storage::disk('public')->delete($fileSurat);
+        }
+
+        return redirect()
+            ->route('laporan.index')
+            ->with(
+                'success',
+                'Laporan berhasil dihapus dan temuan terkait dikembalikan menjadi Open.'
+            );
+    }
+}
