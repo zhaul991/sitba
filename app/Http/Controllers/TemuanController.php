@@ -27,6 +27,8 @@ class TemuanController extends Controller
         $tingkatRisiko = $request->query('tingkat_risiko');
         $jenisPengawasan = $request->query('jenis_pengawasan');
 
+        $filter = $request->query('filter');
+
         $tahun = $request->filled('tahun')
             ? $request->integer('tahun')
             : null;
@@ -106,6 +108,20 @@ class TemuanController extends Controller
             })
             ->when($tingkatRisiko, function ($query, $tingkatRisiko) {
                 $query->where('tingkat_risiko', $tingkatRisiko);
+            })
+            ->when($filter === 'menahun', function ($query) {
+                $query
+                    ->where('status', 'Open')
+                    ->where('created_at', '<', now()->subYear());
+            })
+            ->when($filter === 'overdue', function ($query) {
+                $query
+                    ->whereHas('tindakLanjut', function ($query) {
+                        $query
+                            ->whereNotNull('deadline')
+                            ->where('deadline', '<', now());
+                    })
+                    ->where('status', 'Open');
             });
 
         $totalTemuan = (clone $queryTemuan)->count();

@@ -15,6 +15,13 @@
             'Close' => 'bg-green-50 text-green-700 border-green-200',
             default => 'bg-gray-50 text-gray-700 border-gray-200',
         };
+
+        $temuanMenahun = $temuan->status === 'Open'
+            && $temuan->created_at < now()->subYear();
+
+        $umurTemuan = $temuan->created_at
+            ? $temuan->created_at->diffForHumans(now(), true)
+            : null;
     @endphp
 
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -36,10 +43,14 @@
                 Kembali
             </a>
 
+            @if(auth()->user()->canModify())
+
             <a href="{{ route('temuan.edit', $temuan) }}"
                class="rounded-xl bg-amber-500 px-5 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600">
                 Edit Temuan
             </a>
+
+            @endif
 
         </div>
 
@@ -49,6 +60,50 @@
         <div class="mb-6 rounded-xl border border-green-200 bg-green-50 px-5 py-4 text-green-700">
             {{ session('success') }}
         </div>
+    @endif
+
+
+    @if ($temuanMenahun)
+
+        <div class="mb-6 overflow-hidden rounded-2xl border border-orange-200 bg-gradient-to-r from-orange-50 to-red-50 shadow-sm">
+
+            <div class="flex items-start gap-4 p-5">
+
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-100 text-2xl">
+                    ⚠️
+                </div>
+
+                <div>
+
+                    <p class="text-xs font-black uppercase tracking-wider text-orange-700">
+                        Perhatian
+                    </p>
+
+                    <h3 class="mt-1 text-lg font-black text-gray-900">
+                        Temuan Menahun Belum Diselesaikan
+                    </h3>
+
+                    <p class="mt-2 text-sm leading-6 text-gray-600">
+                        Temuan ini masih berstatus
+                        <span class="font-bold text-red-700">
+                            {{ $temuan->status }}
+                        </span>
+                        dengan umur temuan
+                        <span class="font-bold text-orange-700">
+                            {{ $umurTemuan }}
+                        </span>.
+                    </p>
+
+                    <p class="mt-2 text-sm text-gray-600">
+                        Mohon dilakukan tindak lanjut untuk penyelesaian temuan.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
     @endif
 
     <div class="grid gap-6 lg:grid-cols-3">
@@ -261,6 +316,19 @@
                         : '-' }}
                 </p>
 
+                @if ($temuan->created_at)
+
+                    <div class="mt-3 inline-flex items-center gap-2 rounded-lg bg-orange-50 px-3 py-2 text-sm font-semibold text-orange-700">
+
+                        ⏳
+
+                        Umur Temuan:
+                        {{ $temuan->created_at->diffForHumans(now(), true) }}
+
+                    </div>
+
+                @endif
+
                 <p class="mt-2 text-sm leading-6 text-gray-600">
                     Temuan dicatat berdasarkan hasil inspeksi di
                     {{ $temuan->inspeksi?->bandara?->nama_bandara ?? 'bandar udara' }}.
@@ -374,6 +442,8 @@
 
                     <div class="flex flex-col gap-2 sm:flex-row">
 
+                        @if(auth()->user()->canModify())
+
                         <a href="{{ route('tindaklanjut.create', ['temuan_id' => $temuan->id]) }}"
                            class="rounded-xl bg-blue-600 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-blue-700">
                             + Tambah Tindak Lanjut
@@ -389,6 +459,8 @@
                             >
                                 Tutup Temuan
                             </button>
+
+                        @endif
 
                         @endif
 
@@ -586,6 +658,8 @@
 
                                 </div>
 
+                                @if(auth()->user()->canModify())
+
                                 <div class="flex gap-2">
 
                                     <a
@@ -612,6 +686,8 @@
                                     </form>
 
                                 </div>
+
+                                @endif
 
                             </div>
 
@@ -655,10 +731,14 @@
                         </p>
                     </div>
 
+                    @if(auth()->user()->canModify())
+
                     <a href="{{ route('fototemuan.create', ['temuan_id' => $temuan->id]) }}"
                        class="rounded-xl bg-gray-900 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-gray-700">
                         + Tambah Foto
                     </a>
+
+                    @endif
 
                 </div>
 
@@ -680,6 +760,8 @@
                                     {{ $foto->keterangan ?: 'Tanpa keterangan.' }}
                                 </p>
 
+                                @if(auth()->user()->canModify())
+
                                 <form
                                     action="{{ route('fototemuan.destroy', $foto) }}"
                                     method="POST"
@@ -696,6 +778,8 @@
                                         Hapus Foto
                                     </button>
                                 </form>
+
+                                @endif
 
                             </div>
 
@@ -810,6 +894,8 @@
 
             </div>
 
+            @if(auth()->user()->canModify())
+
             <form
                 action="{{ route('temuan.destroy', $temuan) }}"
                 method="POST"
@@ -824,6 +910,8 @@
                     Hapus Temuan
                 </button>
             </form>
+
+            @endif
 
         </div>
 

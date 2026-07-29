@@ -418,6 +418,9 @@
                             $deadlineClass = 'bg-gray-100 text-gray-600';
                             $rowClass = '';
 
+                            $menahun = $temuan->status === 'Open'
+                                && $temuan->created_at < now()->subYear();
+
                             if ($temuan->status === 'Close') {
                                 $deadlineLabel = 'Selesai';
                                 $deadlineClass = 'bg-blue-50 text-blue-700';
@@ -489,9 +492,21 @@
                             </td>
 
                             <td class="whitespace-nowrap px-6 py-4">
-                                <span class="rounded-lg px-3 py-1 text-xs font-semibold {{ $statusClass }}">
-                                    {{ $temuan->status }}
-                                </span>
+
+                                <div class="flex flex-wrap gap-2">
+
+                                    <span class="rounded-lg px-3 py-1 text-xs font-semibold {{ $statusClass }}">
+                                        {{ $temuan->status }}
+                                    </span>
+
+                                    @if ($menahun)
+                                        <span class="rounded-lg bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700">
+                                            ⚠️ MENAHUN
+                                        </span>
+                                    @endif
+
+                                </div>
+
                             </td>
 
                             <td class="whitespace-nowrap px-6 py-4">
@@ -518,25 +533,29 @@
                                         Detail
                                     </a>
 
-                                    <a href="{{ route('temuan.edit', $temuan) }}"
-                                       class="rounded-lg bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-100">
-                                        Edit
-                                    </a>
+                                    @if(auth()->user()->canModify())
 
-                                    <form
-                                        action="{{ route('temuan.destroy', $temuan) }}"
-                                        method="POST"
-                                        onsubmit="return confirm('Yakin ingin menghapus temuan ini?')">
+                                        <a href="{{ route('temuan.edit', $temuan) }}"
+                                           class="rounded-lg bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-100">
+                                            Edit
+                                        </a>
 
-                                        @csrf
-                                        @method('DELETE')
+                                        <form
+                                            action="{{ route('temuan.destroy', $temuan) }}"
+                                            method="POST"
+                                            onsubmit="return confirm('Yakin ingin menghapus temuan ini?')">
 
-                                        <button
-                                            type="submit"
-                                            class="rounded-lg bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100">
-                                            Hapus
-                                        </button>
-                                    </form>
+                                            @csrf
+                                            @method('DELETE')
+
+                                            <button
+                                                type="submit"
+                                                class="rounded-lg bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100">
+                                                Hapus
+                                            </button>
+                                        </form>
+
+                                    @endif
 
                                 </div>
                             </td>

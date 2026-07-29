@@ -631,8 +631,9 @@
                     </p>
                 </a>
 
-                <div
-                    class="rounded-2xl border
+                <a
+                    href="{{ route('temuan.index', ['filter' => 'overdue']) }}"
+                    class="group block rounded-2xl border
                            {{ $totalOverdue > 0
                                 ? 'border-red-100 bg-red-50/40'
                                 : 'border-emerald-100 bg-emerald-50/40' }}
@@ -661,7 +662,52 @@
                             ? 'Temuan melewati batas waktu penyelesaian.'
                             : 'Tidak terdapat temuan overdue.' }}
                     </p>
-                </div>
+
+                    <p class="mt-4 text-xs font-semibold
+                              {{ $totalOverdue > 0
+                                    ? 'text-red-600'
+                                    : 'text-emerald-600' }}">
+                        Lihat temuan overdue →
+                    </p>
+
+                </a>
+
+                <a
+                    href="{{ route('temuan.index', ['filter' => 'menahun']) }}"
+                    class="group block rounded-2xl border border-orange-100 bg-white p-5
+                           transition duration-300 hover:-translate-y-1
+                           hover:border-orange-200 hover:shadow-md"
+                >
+
+                    <div class="flex items-start justify-between">
+
+                        <div
+                            class="flex h-11 w-11 items-center justify-center
+                                   rounded-2xl bg-orange-50 text-xl"
+                        >
+                            ⏳
+                        </div>
+
+                    </div>
+
+                    <p class="mt-5 text-3xl font-black tabular-nums text-slate-900">
+                        {{ number_format($temuanMenahun) }}
+                    </p>
+
+                    <p class="mt-1 text-sm font-bold text-slate-700">
+                        Temuan Menahun
+                    </p>
+
+                    <p class="mt-2 text-xs leading-5 text-slate-500">
+                        Temuan yang belum selesai lebih dari 1 tahun.
+                    </p>
+
+                    <p class="mt-4 text-xs font-semibold text-orange-600">
+                        Lihat temuan menahun →
+                    </p>
+
+                </a>
+
 
                 <div
                     class="rounded-2xl border border-blue-100 bg-white p-5
@@ -709,6 +755,8 @@
         </div>
     </div>
 
+
+    @if(auth()->user()->canModify())
 
     {{-- Aksi Cepat --}}
     <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -824,6 +872,173 @@
 
     </div>
 
+
+
+
+    @endif
+
+
+    @if(auth()->user()->isPimpinan())
+
+    {{-- Statistik utama pimpinan --}}
+
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+
+
+        <a href="{{ route('bandara.index') }}"
+           class="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm
+                  transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md">
+
+            <div class="flex items-start justify-between">
+
+                <div>
+                    <p class="text-sm font-medium text-slate-500">
+                        Total Bandara
+                    </p>
+
+                    <p class="mt-3 text-3xl font-black text-slate-800">
+                        {{ number_format($jumlahBandara) }}
+                    </p>
+                </div>
+
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-2xl">
+                    🛫
+                </div>
+
+            </div>
+
+            <p class="mt-4 text-xs font-semibold text-blue-600">
+                Lihat data bandara →
+            </p>
+
+        </a>
+
+
+
+        <a
+            href="{{ route('temuan.index', ['tingkat_risiko' => 'Tinggi']) }}"
+            class="group rounded-2xl border border-red-100 bg-white p-5 shadow-sm
+                   transition hover:-translate-y-0.5 hover:border-red-200 hover:shadow-md"
+        >
+
+            <div class="flex items-start justify-between">
+
+                <div>
+                    <p class="text-sm font-medium text-slate-500">
+                        Risiko Tinggi
+                    </p>
+
+                    <p class="mt-3 text-3xl font-bold text-red-700">
+                        {{ number_format($executiveRisikoTinggi) }}
+                    </p>
+                </div>
+
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-2xl">
+                    🚨
+                </div>
+
+            </div>
+
+            <p class="mt-4 text-xs font-semibold text-red-600">
+                Perlu perhatian pimpinan →
+            </p>
+
+        </a>
+
+
+        <a href="{{ route('temuan.index') }}"
+           class="group rounded-2xl border border-amber-100 bg-white p-5 shadow-sm
+                  transition hover:-translate-y-1 hover:border-amber-200 hover:shadow-md">
+
+            <div class="flex items-start justify-between">
+
+                <div>
+                    <p class="text-sm font-medium text-slate-500">
+                        Total Temuan
+                    </p>
+
+                    <p class="mt-3 text-3xl font-black text-slate-800">
+                        {{ number_format($jumlahTemuan) }}
+                    </p>
+                </div>
+
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-2xl">
+                    ⚠️
+                </div>
+
+            </div>
+
+            <p class="mt-4 text-xs font-semibold text-amber-600">
+                Lihat seluruh temuan →
+            </p>
+
+        </a>
+
+
+
+        <a href="{{ route('temuan.index', ['status' => 'Open']) }}"
+           class="group rounded-2xl border border-red-100 bg-white p-5 shadow-sm
+                  transition hover:-translate-y-1 hover:border-red-200 hover:shadow-md">
+
+            <div class="flex items-start justify-between">
+
+                <div>
+                    <p class="text-sm font-medium text-slate-500">
+                        Temuan Open
+                    </p>
+
+                    <p class="mt-3 text-3xl font-black text-red-700">
+                        {{ number_format($temuanOpen) }}
+                    </p>
+                </div>
+
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-2xl">
+                    🚨
+                </div>
+
+            </div>
+
+            <p class="mt-4 text-xs font-semibold text-red-600">
+                Perlu penyelesaian →
+            </p>
+
+        </a>
+
+
+
+        <a href="{{ route('laporan.index') }}"
+           class="group rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm
+                  transition hover:-translate-y-1 hover:border-emerald-200 hover:shadow-md">
+
+            <div class="flex items-start justify-between">
+
+                <div>
+                    <p class="text-sm font-medium text-slate-500">
+                        Total Laporan
+                    </p>
+
+                    <p class="mt-3 text-3xl font-black text-slate-800">
+                        {{ number_format($jumlahLaporan) }}
+                    </p>
+                </div>
+
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-2xl">
+                    📄
+                </div>
+
+            </div>
+
+            <p class="mt-4 text-xs font-semibold text-emerald-600">
+                Lihat laporan →
+            </p>
+
+        </a>
+
+
+    </div>
+
+
+    @else
 
     {{-- Statistik utama --}}
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
@@ -975,6 +1190,11 @@
     </div>
 
 
+
+
+
+
+    @endif
 
 
     {{-- Grafik dashboard --}}

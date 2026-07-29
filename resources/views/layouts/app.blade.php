@@ -296,6 +296,8 @@
             </a>
 
 
+            @if(auth()->user()->canModify())
+
             {{-- Master Data --}}
             <p class="mb-2 mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Master Data
@@ -325,6 +327,13 @@
                 <span>Data Inspektur</span>
             </a>
 
+
+
+
+            @endif
+
+
+            @if(auth()->user()->canModify())
 
             {{-- KEGIATAN PENGAWASAN --}}
             <p class="mb-2 mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -378,6 +387,10 @@
                 <span>📝</span>
                 <span>Audit</span>
             </a>
+
+
+
+            @endif
 
             {{-- HASIL PENGAWASAN --}}
             <p class="mb-2 mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -443,6 +456,22 @@
             >
                 <span>📄</span>
                 <span>Laporan Tindak Lanjut</span>
+
+
+                
+            </a>
+
+
+            <a
+                href="{{ route('warning-center.index') }}"
+                class="mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5
+                text-sm font-medium transition
+                {{ request()->routeIs('warning-center.*')
+                    ? 'bg-red-600 text-white shadow'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+            >
+                <span>🚨</span>
+                <span>Warning Center</span>
             </a>
 
             {{-- AKTIVITAS --}}
@@ -461,6 +490,31 @@
                 <span>🕘</span>
                 <span>Riwayat Aktivitas</span>
             </a>
+
+
+
+                @if(auth()->user()->canModify())
+
+                <div class="mt-6 px-4 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    DRAFT INSPEKSI
+                </div>
+
+
+
+                <a
+                    href="{{ route('draft.index') }}"
+                    class="mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5
+                    text-sm font-medium transition
+                    {{ request()->routeIs('draft.*')
+                        ? 'bg-blue-600 text-white shadow'
+                        : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+                >
+                    <span>📁</span>
+                    <span>Draft Center</span>
+                </a>
+
+                @endif
+
 
 </nav>
 

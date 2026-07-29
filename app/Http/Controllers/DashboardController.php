@@ -623,6 +623,11 @@ class DashboardController extends Controller
             ? $daftarBandara->firstWhere('id', $bandaraId)
             : null;
 
+        $temuanMenahun = \App\Models\Temuan::where('status', 'Open')
+            ->where('created_at', '<', now()->subYear())
+            ->count();
+
+
         return view('dashboard.index', compact(
             'jumlahBandara',
             'jumlahPetugas',
@@ -659,7 +664,8 @@ class DashboardController extends Controller
             'labelGrafikTemuan',
             'dataTemuanOpenGrafik',
             'dataTemuanCloseGrafik',
-            'dataTemuanCloseBulanan'
+            'dataTemuanCloseBulanan',
+            'temuanMenahun'
         ));
     }
 }

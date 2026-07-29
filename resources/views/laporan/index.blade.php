@@ -22,10 +22,14 @@
                 </p>
             </div>
 
+            @if(auth()->user()->canModify())
+
             <a href="{{ route('laporan.create') }}"
                class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700">
                 + Tambah Laporan
             </a>
+
+            @endif
 
         </div>
     </div>
@@ -244,6 +248,8 @@
 
                             <td class="whitespace-nowrap px-6 py-4 text-right">
 
+                                @if(auth()->user()->canModify())
+
                                 <div class="flex justify-end gap-2">
 
                                     <a href="{{ route('laporan.edit', $laporan) }}"
@@ -267,6 +273,8 @@
                                     </form>
 
                                 </div>
+
+                                @endif
 
                             </td>
 
@@ -304,10 +312,14 @@
                                         Tambahkan laporan atau ubah filter pencarian.
                                     </p>
 
+                                    @if(auth()->user()->canModify())
+
                                     <a href="{{ route('laporan.create') }}"
                                        class="mt-5 inline-flex rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">
                                         + Tambah Laporan
                                     </a>
+
+                                    @endif
 
                                 </td>
 
