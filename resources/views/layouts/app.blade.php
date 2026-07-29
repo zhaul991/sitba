@@ -296,7 +296,7 @@
             </a>
 
 
-            @if(auth()->user()->canModify())
+            @if(auth()->check() && auth()->user()->canModify())
 
             {{-- Master Data --}}
             <p class="mb-2 mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -333,7 +333,7 @@
             @endif
 
 
-            @if(auth()->user()->canModify())
+            @if(auth()->check() && auth()->user()->canModify())
 
             {{-- KEGIATAN PENGAWASAN --}}
             <p class="mb-2 mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -493,7 +493,7 @@
 
 
 
-                @if(auth()->user()->canModify())
+                @if(auth()->check() && auth()->user()->canModify())
 
                 <div class="mt-6 px-4 text-xs font-semibold uppercase tracking-wider text-gray-500">
                     DRAFT INSPEKSI
